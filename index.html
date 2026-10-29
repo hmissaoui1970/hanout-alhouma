@@ -1697,6 +1697,10 @@ const SP_HUND={تلت:3,تلات:3,ربع:4,اربع:4,خمس:5,ست:6,سبع:7,
 
 function spokenNormalize(t){
   t=String(t||"").replace(/[٠-٩]/g,d=>String(d.charCodeAt(0)-1632)).replace(/(\d),(\d)/g,"$1.$2");
+  // how phones write "درهم": iPhone writes the money sign "د.إ" / "د.م.", or misspells it (درام، دراه، درهام…)
+  t=t.replace(/د\.\s?إ\.?|د\.\s?م\.?/g," درهم ");
+  t=t.replace(/(^|\s)(?:درام|دراه|درهام|دراهام|دراهامات|دارهم|ديرهم|ديرهام|درهمات|dirhams?|dirham|dhs?\.)(?=\s|$)/gi,"$1دراهم");
+  t=t.replace(/(^|\s)(?:جورج|جورش|جوش|غوج)(?=\s|$)/g,"$1جوج");   // "جوج" heard as a name
   t=t.replace(/(\d)([^\d\s.,])/g,"$1 $2");                       // 4dh -> 4 dh, 1L -> 1 L
   t=t.replace(/(^|\s)(ب|بـ)(\d)/g,"$1$2 $3");                     // ب27 -> ب 27
   // price per piece: "للوحدة / كل وحدة / la pièce" -> @each ; "ضرب 3 / x3 / 3 مرات" -> @x 3 (the app multiplies)
