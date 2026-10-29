@@ -75,6 +75,14 @@ body.locked{overflow:hidden}
 .bitem .stk{color:var(--paid,#6ee7b7)}
 .btn.nextclient{width:100%;margin-top:10px;min-height:50px;font-weight:700;font-size:1rem;border:1.5px dashed var(--accent-2,#ffd23f)!important;color:var(--accent-2,#ffd23f)!important;background:transparent!important}
 /* ---------- barcodes ---------- */
+.quick{margin:0 0 12px}.quick h3{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--muted)}
+.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qbtn{display:grid;justify-items:center;align-content:start;gap:2px;padding:8px 4px;min-height:84px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;cursor:pointer;text-align:center}
+.qbtn:active,.qbtn.flash{transform:scale(.96);border-color:var(--accent)}
+.qbtn .qi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:22px;overflow:hidden}.qbtn .qi img{width:100%;height:100%;object-fit:cover}
+.qbtn .qn{font-size:12.5px;font-weight:700;line-height:1.25;max-height:2.5em;overflow:hidden}.qbtn .qp{font-size:11.5px;color:var(--muted)}
+.qbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:360px){.qgrid{grid-template-columns:repeat(3,1fr)}}
 .btn.scanbig{width:100%;min-height:60px;margin:2px 0 12px;display:flex!important;align-items:center;justify-content:center;gap:10px;font-size:19px!important;font-weight:800!important;background:var(--grad)!important;color:var(--accent-ink)!important;border:0!important;border-radius:18px!important;box-shadow:0 10px 30px -8px rgba(255,79,163,.6)}
 .scanbig svg{width:26px;height:26px}
 .codebox{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
@@ -1013,6 +1021,8 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <div class="bhead"><h2>لَاكِيس</h2><button class="bclose" id="bClose" type="button" aria-label="سدّ">×</button></div>
       <div class="btabs" id="btabs"></div>
       <button class="btn scanbig" id="bScan" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>سكاني الكود بار</button>
+      <div class="quick" id="quickBox" hidden><h3>ضغطة وحدة: السلعة اللي كتبيع بزاف</h3><div class="qgrid" id="quickGrid"></div></div>
+
       <form class="calc" id="calcForm">
         <button type="button" class="mic small" id="bMic" aria-label="قول السلعة و الثمن"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
         <input id="bSay" autocomplete="off" placeholder="قول: «لتر حليب 4 دراهم و نص كيلو زبدة 27»" aria-label="قول السلعة و الثمن">
@@ -4150,6 +4160,30 @@ $("#subForm").addEventListener("submit",e=>{ e.preventDefault(); subApply("#subI
 $("#subLockForm").addEventListener("submit",e=>{ e.preventDefault(); subApply("#subLockIn","#subLockErr"); });
 $("#subBarCode").onclick=()=>{ $("#subSec").scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(()=>$("#subIn").focus(),400); };
 $("#subBarSave").onclick=$("#subLockSave").onclick=()=>$("#backupDl").click();
+
+/* ---------- quick-tap grid in لاكيس: the 12 products sold most (loose goods first when there are no sales yet) ---------- */
+function quickProducts(){
+  const since=Date.now()-30*864e5, count={};
+  for(const s of sales){ if(s.at<since) continue; for(const i of s.items||[]){ const k=norm(String(i.name||"").replace(/^[\d.]+\s*(كيلو|غرام)?\s*/,"")); count[k]=(count[k]||0)+(+i.qty||1); } }
+  const score=p=>(count[norm(p.name)]||0)*10 + (p.byKg?3:0) + (!p.barcode?2:0);
+  return products.slice().sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name,"ar")).slice(0,12);
+}
+function renderQuick(){
+  const box=$("#quickBox"), g=$("#quickGrid"); if(!box||!g) return;
+  const list=quickProducts(); box.hidden=!list.length; g.innerHTML="";
+  for(const p of list){
+    const b=document.createElement("button"); b.type="button"; b.className="qbtn"; b.setAttribute("aria-label",`زيد ${p.name} ل لاكيس`);
+    const ic=document.createElement("span"); ic.className="qi";
+    if(p.photo){ const im=new Image(); im.src=p.photo; im.alt=""; ic.append(im); } else ic.textContent=productEmoji(p)||p.name.trim().slice(0,1);
+    const n=document.createElement("span"); n.className="qn"; n.textContent=p.name;
+    const pr=document.createElement("span"); pr.className="qp"; pr.textContent=(+p.price||0).toFixed(2)+(p.byKg?" / كيلو":"");
+    b.append(ic,n,pr);
+    b.onclick=()=>{ addToBasket(p.id,b); if(!p.byKg){ const bk=curBasket(); $("#calcNote").textContent=`✓ ${p.name} · ${money(p.price)} · المجموع ${money(basketTotal(bk))}`; } };
+    g.append(b);
+  }
+}
+const _renderQ=render;
+render=function(){ _renderQ(); renderQuick(); };
 const _renderSub=render;
 render=function(){ _renderSub(); subCheck(); };
 setInterval(subCheck,60e3);
