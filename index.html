@@ -921,6 +921,8 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <div class="stat" id="oweStat"><span>الكريدي عند الناس</span><b id="sOwe">0.00 درهم</b></div>
     </div>
   </header>
+  <div class="subbar soft" id="bkBar" hidden role="status"><p id="bkBarT"></p><div class="actions"><button class="btn primary" type="button" id="bkShare">📲 صيفط النسخة ف واتساب</button><button class="btn" type="button" id="bkLater">من بعد</button></div></div>
+  <div class="subbar soft" id="instBar" hidden role="status"><p>زيد التطبيق للشاشة ديال التيليفون، باش يتحل بحال تطبيق و ما تضيعش المعلومات.</p><div class="actions"><button class="btn primary" type="button" id="instBtn">📲 زيد التطبيق للشاشة</button><button class="btn" type="button" id="instLater">من بعد</button></div></div>
   <div class="subbar" id="subBar" hidden role="status"><p id="subBarT"></p><div class="actions"><button class="btn primary" type="button" id="subBarCode">🔑 دخّل الكود</button><button class="btn" type="button" id="subBarSave">💾 حمّل نسخة</button><a class="btn" id="subBarWa" target="_blank" rel="noopener">💬 خلّص ف واتساب</a></div></div>
   <div class="note modenote" id="modeNote"></div>
   <div class="zband" aria-hidden="true"></div>
@@ -4152,7 +4154,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 
 /* backup: download / restore a file */
 $("#backupDl").onclick=()=>{
-  const blob=new Blob([JSON.stringify({v:1,products,sales,clients,ledger,suppliers,orders,sledger,savedAt:Date.now()})],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({v:1,products,sales,clients,ledger,suppliers,orders,sledger,owner,savedAt:Date.now()})],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download=`hanout-backup-${new Date().toISOString().slice(0,10)}.json`;
   document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
@@ -4188,6 +4190,53 @@ function backupNote(){
   $("#backupStatus").style.color = (!last||days>7) ? "var(--low)" : "var(--muted)";
 }
 
+
+/* ---------- weekly backup, one tap: the file goes to WhatsApp (or wherever the owner picks) ---------- */
+function backupFile(){
+  const data=JSON.stringify({v:1,products,sales,clients,ledger,suppliers,orders,sledger,owner,savedAt:Date.now()});
+  return new File([data],`hanout-backup-${new Date().toISOString().slice(0,10)}.json`,{type:"application/json"});
+}
+function backupDue(){
+  if(!owner||!ownerComplete()||!(products.length||sales.length||clients.length)) return false;
+  let last=0, later=0; try{ last=+localStorage.getItem(KEY+"-lastbackup")||0; later=+localStorage.getItem(KEY+"-bklater")||0; }catch{}
+  if(Date.now()<later) return false;
+  return !last || Date.now()-last>7*864e5;
+}
+function paintBkBar(){
+  const show=backupDue(); $("#bkBar").hidden=!show; if(!show) return;
+  let last=0; try{ last=+localStorage.getItem(KEY+"-lastbackup")||0; }catch{}
+  $("#bkBarT").textContent = last ? `💾 هادي ${Math.floor((Date.now()-last)/864e5)} يوم ما درتي نسخة احتياطية. ضغطة وحدة و تكون عندك ف واتساب.` : "💾 دير نسخة احتياطية ديال الحانوت: ضغطة وحدة و تكون عندك ف واتساب. إلا ضاع التيليفون، كلشي كيرجع منها.";
+}
+$("#bkShare").onclick=async()=>{
+  const f=backupFile();
+  try{
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      await navigator.share({files:[f],title:"نسخة احتياطية · حانوت الحومة الذكي"});
+      try{ localStorage.setItem(KEY+"-lastbackup",String(Date.now())); }catch{}
+      backupNote(); paintBkBar(); toast("تصيفطات النسخة ✓ خبّيها ف واتساب."); return;
+    }
+  }catch(e){ if(e&&e.name==="AbortError") return; }
+  $("#backupDl").click(); paintBkBar();
+};
+$("#bkLater").onclick=()=>{ try{ localStorage.setItem(KEY+"-bklater",String(Date.now()+864e5)); }catch{} $("#bkBar").hidden=true; };
+setInterval(paintBkBar,60*60e3);
+
+/* ---------- Android: install the app on the home screen with one tap ---------- */
+let installEvt=null;
+addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault(); installEvt=e;
+  let later=0; try{ later=+localStorage.getItem("hanout-instlater")||0; }catch{}
+  if(Date.now()>later) $("#instBar").hidden=false;
+});
+$("#instBtn").onclick=async()=>{ if(!installEvt) return; installEvt.prompt(); try{ await installEvt.userChoice; }catch{} installEvt=null; $("#instBar").hidden=true; };
+$("#instLater").onclick=()=>{ try{ localStorage.setItem("hanout-instlater",String(Date.now()+3*864e5)); }catch{} $("#instBar").hidden=true; };
+addEventListener("appinstalled",()=>{ $("#instBar").hidden=true; toast("تزاد التطبيق للشاشة ✓"); });
+
+/* ---------- offline: the app opens even with no internet (only on a real website) ---------- */
+if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost") && !/claude\.ai|claudeusercontent/.test(location.hostname)){
+  addEventListener("load",()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
+}
+
 /* ---------- boot ---------- */
 try{ speechSynthesis.getVoices(); }catch{}
 (async function(){
@@ -4214,7 +4263,7 @@ try{ speechSynthesis.getVoices(); }catch{}
   }
   applyData(d||{});
   loaded=true;
-  render(); backupNote(); storageNote(true);
+  render(); backupNote(); storageNote(true); setTimeout(paintBkBar,1500);
   // ask the browser to keep the shop's data even when the phone runs low on space
   try{ if(navigator.storage&&navigator.storage.persist&&!(await navigator.storage.persisted())) await navigator.storage.persist(); }catch{}
   window.HANOUT_ON_PHONE=true; initOwner();
