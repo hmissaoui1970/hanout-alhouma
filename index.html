@@ -1223,6 +1223,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 </div>
 <div class="rush" id="rush" hidden dir="rtl" lang="ar-MA" role="dialog" aria-modal="true" aria-label="وضع الزحام">
   <div class="rush-top"><button type="button" id="rushClose" aria-label="سدّ وضع الزحام">✕</button><div class="rush-total"><small id="rushWho">كليان 1</small><b id="rushTotal">0.00</b><small id="rushCount">لاكيس خاوية · سكاني ولا ضغط على سلعة</small></div><button type="button" id="rushUndo" aria-label="رجّع اللور">↶</button></div>
+  <button type="button" class="btn" id="rushCamBtn" hidden style="min-height:40px">📷 حلّ الكاميرا</button>
   <div class="rush-cam" id="rushCam"><video id="rushVideo" playsinline muted></video><div class="rush-line"></div><div class="rush-msg" id="rushMsg">كنحل الكاميرا… (السكانير ديال اليد خدّام حتى هو)</div></div>
   <div class="rush-new" id="rushNew" hidden><b id="rushNewT">كود جديد · شحال الثمن؟</b><input id="rushPrice" inputmode="decimal" autocomplete="off" aria-label="الثمن"><button type="button" class="primary" id="rushNewOk">زيد</button><button type="button" id="rushNewNo">لا</button></div>
   <ul class="rush-list" id="rushList"></ul>
@@ -2866,6 +2867,7 @@ async function openScanner(title,opt){
   $("#scanTitle").textContent=title||"سكاني الكود بار";
   if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ toast("الكاميرا ما خدّاماش هنا. استعمل سكانير، ولا كتب رقم الكود ف الخانة."); return; }
   if(!opt.inline) $("#scanBox").hidden=false; scanSay("كنحل الكاميرا…");
+  if(!opt.inline){ try{ localStorage.removeItem("hanout-gun"); }catch{} }   // the owner chose the camera again
   try{ scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false}); }
   catch(e){
     $("#scanBox").hidden=true; scanStream=null; if(opt.inline) return;
@@ -2912,6 +2914,9 @@ document.addEventListener("keydown",e=>{
       const el=document.activeElement;
       if(el && el.id==="pCode"){ el.value=code; return; }
       if(el && el.tagName==="INPUT" && typeof el.value==="string" && el.value.endsWith(code)) el.value=el.value.slice(0,-code.length);
+      // a scanner gun is here: the camera isn't needed (saves battery and room on the screen)
+      if(rushOn && scanStream){ closeScanner(); $("#rushCam").hidden=true; $("#rushCamBtn").hidden=false; }
+      try{ localStorage.setItem("hanout-gun","1"); }catch{}
       handleScan(code); return;
     }
     kbBuf=""; return;
@@ -4281,7 +4286,11 @@ function rushQuick(){
 async function openRush(){
   rushOn=true; $("#rush").hidden=false; document.body.classList.add("locked");
   if(currentTab!=="caisse") showTab("caisse");
-  rushQuick(); paintRush(); rushSay("كنحل الكاميرا… (السكانير ديال اليد خدّام حتى هو)");
+  rushQuick(); paintRush();
+  let gun=false; try{ gun=localStorage.getItem("hanout-gun")==="1"; }catch{}
+  $("#rushCam").hidden=gun; $("#rushCamBtn").hidden=!gun;
+  if(gun){ rushSay("السكانير جاهز… كل بيب = سلعة"); $("#rushCount").textContent="🔫 السكانير جاهز · سكاني السلعة"; return; }
+  rushSay("كنحل الكاميرا… (السكانير ديال اليد خدّام حتى هو)");
   await openScanner(null,{video:"#rushVideo",inline:true});
   if(rushOn && !scanStream) rushSay("الكاميرا ما تحلّاتش. استعمل السكانير ديال اليد، ولا ضغط على السلعة لتحت.","bad");
   else if(rushOn) rushSay("سكاني… كل بيب = سلعة");
@@ -4289,6 +4298,7 @@ async function openRush(){
 function closeRush(){ rushOn=false; rushPending=null; $("#rushNew").hidden=true; closeScanner(); $("#rush").hidden=true; document.body.classList.remove("locked"); renderBasket(); }
 $("#rushOpen").onclick=openRush;
 $("#rushClose").onclick=closeRush;
+$("#rushCamBtn").onclick=async()=>{ try{ localStorage.removeItem("hanout-gun"); }catch{} $("#rushCamBtn").hidden=true; $("#rushCam").hidden=false; await openScanner(null,{video:"#rushVideo",inline:true}); };
 $("#rushUndo").onclick=()=>{ if(undoBasket()) rushSay("↶ رجعت اللور"); else rushSay("ما كاين ما نرجّع"); };
 // a barcode the shop hasn't seen: in a rush, only its price; the name can be written later in the stock
 function rushAsk(code){
