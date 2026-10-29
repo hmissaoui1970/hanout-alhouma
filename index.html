@@ -3697,7 +3697,7 @@ function micErrorText(err){
    is quiet for SR_SILENCE ms or taps the mic again. Android Chrome repeats words in continuous mode,
    so there each piece is a separate short session, restarted until a session hears nothing. */
 // quiet time before acting: short after a price ("…27 درهم"), a bit longer mid-sentence
-const SR_SILENCE=1400, SR_SILENCE_PRICE=850, SR_ANDROID=/Android/i.test(navigator.userAgent);
+const SR_SILENCE=1400, SR_SILENCE_PRICE=850, SR_ANDROID=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);   // phones: short sessions, restarted
 const SR_ENDS_PRICE=/(\d|درهم|دراهم|دراهيم|ريال|ريالات|dh|dhs|نص|ربع)\s*$/i;
 function startListening({btn,box,onFinal,say,onStop}){
   let failed=false, langTry=SR_LANGS.indexOf(srLang), cur=null, said=[], stopped=false, silence=null, done=false, lastLive="";
@@ -3742,7 +3742,11 @@ function startListening({btn,box,onFinal,say,onStop}){
     r.start(); $(btn).classList.add("live");
   };
   go();
-  return {stop:finishNow};
+  // some phone browsers (inside other apps) start the mic but never hear anything: give up cleanly instead of spinning forever
+  const watchdog=setTimeout(()=>{ if(done || said.length || lastLive) return; failed=true; try{ cur&&cur.abort(); }catch{}
+    say("الميكرو ما خدّامش هنا. حلّ التطبيق ف Safari ولا Chrome (ماشي من وسط تطبيق آخر)، ولا ضغط على الخانة و استعمل الميكرو 🎤 ديال الكلافيي."); finish(); },9000);
+  const _fin=finish;
+  return {stop:()=>{ clearTimeout(watchdog); finishNow(); }};
 }
 let rec=null, listening=false;
 $("#mic").addEventListener("click",()=>{
