@@ -75,7 +75,7 @@ body.locked{overflow:hidden}
 .bitem .stk{color:var(--paid,#6ee7b7)}
 .btn.nextclient{width:100%;margin-top:10px;min-height:50px;font-weight:700;font-size:1rem;border:1.5px dashed var(--accent-2,#ffd23f)!important;color:var(--accent-2,#ffd23f)!important;background:transparent!important}
 /* ---------- barcodes ---------- */
-.quick{margin:0 0 12px}.quick h3{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--muted)}
+.qtap{margin:0 0 12px}.qtap h3{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--muted)}
 .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .qbtn{display:grid;justify-items:center;align-content:start;gap:2px;padding:8px 4px;min-height:84px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;cursor:pointer;text-align:center}
 .qbtn:active,.qbtn.flash{transform:scale(.96);border-color:var(--accent)}
@@ -83,6 +83,37 @@ body.locked{overflow:hidden}
 .qbtn .qn{font-size:12.5px;font-weight:700;line-height:1.25;max-height:2.5em;overflow:hidden}.qbtn .qp{font-size:11.5px;color:var(--muted)}
 .qbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:360px){.qgrid{grid-template-columns:repeat(3,1fr)}}
+.rushbtn{width:100%;min-height:48px;margin:-4px 0 12px;font-weight:800;font-size:16px;border-style:dashed}
+.rush{position:fixed;inset:0;z-index:22;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));padding-top:calc(10px + env(safe-area-inset-top,0px));overflow:hidden}
+.rush-top{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;gap:8px}
+.rush-top button{height:48px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;font-size:20px;cursor:pointer}
+.rush-total{text-align:center;line-height:1.1}.rush-total b{display:block;font-size:44px;font-weight:800;direction:ltr}.rush-total small{color:var(--muted);font-size:13px}
+.rush-cam{position:relative;height:150px;flex:none;border-radius:16px;overflow:hidden;background:#000}
+.rush-cam video{width:100%;height:100%;object-fit:cover}
+.rush-cam .rush-line{position:absolute;left:12%;right:12%;top:50%;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.rush-msg{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.6);color:#fff;font-weight:700;font-size:14px;text-align:center}
+.rush-msg.ok{background:rgba(22,120,70,.85)}.rush-msg.bad{background:rgba(160,40,40,.85)}
+.rush-new{display:grid;grid-template-columns:1fr 110px auto auto;gap:6px;align-items:center;padding:8px;border-radius:14px;border:1px solid var(--accent);background:var(--sunk)}
+.rush-new b{font-size:14px}.rush-new input{min-height:44px;font-size:20px;text-align:center;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.rush-new button{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700}
+.rush-new button.primary{background:var(--accent);color:var(--accent-ink,#1a0716);border:0}
+.rush-list{list-style:none;margin:0;padding:0;overflow:auto;flex:1 1 auto;min-height:0;display:grid;align-content:start;gap:4px}
+.rush-list li{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;background:var(--sunk);font-size:15px}
+.rush-list li b{direction:ltr}.rush-list li button{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:18px}
+.rush-list .empty{background:none;color:var(--muted);text-align:center;display:block}
+.rush-quick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.rush-quick button{min-height:54px;border-radius:12px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;font-size:11px;font-weight:700;line-height:1.15;padding:4px 2px;overflow:hidden}
+.rush-quick button span{display:block;font-size:20px}
+.rush-pay{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rush-pay button{min-height:56px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;font-size:20px;font-weight:800;cursor:pointer}
+.rush-pay button.exact{grid-column:span 2;background:linear-gradient(90deg,var(--accent),#ff8a3d);color:#1a0716;border:0}
+.rush-pay button.credit{font-size:15px}
+.rush-pay button:disabled{opacity:.4}
+.rush-change{position:fixed;inset:0;z-index:23;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 88%,transparent);text-align:center}
+.rush-change div{display:grid;gap:6px}.rush-change span{font-size:22px;font-weight:700;color:var(--muted)}.rush-change b{font-size:64px;font-weight:800;color:var(--paid,#3ee6a8);direction:ltr}
+.rush button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.item .name.noname{color:var(--accent);font-weight:800}
+.item .name{cursor:pointer}
 .btn.scanbig{width:100%;min-height:60px;margin:2px 0 12px;display:flex!important;align-items:center;justify-content:center;gap:10px;font-size:19px!important;font-weight:800!important;background:var(--grad)!important;color:var(--accent-ink)!important;border:0!important;border-radius:18px!important;box-shadow:0 10px 30px -8px rgba(255,79,163,.6)}
 .scanbig svg{width:26px;height:26px}
 .codebox{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
@@ -1021,7 +1052,8 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <div class="bhead"><h2>لَاكِيس</h2><button class="bclose" id="bClose" type="button" aria-label="سدّ">×</button></div>
       <div class="btabs" id="btabs"></div>
       <button class="btn scanbig" id="bScan" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>سكاني الكود بار</button>
-      <div class="quick" id="quickBox" hidden><h3>ضغطة وحدة: السلعة اللي كتبيع بزاف</h3><div class="qgrid" id="quickGrid"></div></div>
+      <button class="btn rushbtn" id="rushOpen" type="button">⚡ وضع الزحام: سكاني و خلّص بلا ما تحبس</button>
+      <div class="qtap" id="quickBox" hidden><h3>ضغطة وحدة: السلعة اللي كتبيع بزاف</h3><div class="qgrid" id="quickGrid"></div></div>
 
       <form class="calc" id="calcForm">
         <button type="button" class="mic small" id="bMic" aria-label="قول السلعة و الثمن"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
@@ -1189,6 +1221,15 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <div class="actions"><button type="button" class="btn" id="sheetCancel">لغي</button><button type="submit" class="btn primary" id="sheetSave">زيدها للستوك</button></div>
   </form>
 </div>
+<div class="rush" id="rush" hidden dir="rtl" lang="ar-MA" role="dialog" aria-modal="true" aria-label="وضع الزحام">
+  <div class="rush-top"><button type="button" id="rushClose" aria-label="سدّ وضع الزحام">✕</button><div class="rush-total"><small id="rushWho">كليان 1</small><b id="rushTotal">0.00</b><small id="rushCount">لاكيس خاوية · سكاني ولا ضغط على سلعة</small></div><button type="button" id="rushUndo" aria-label="رجّع اللور">↶</button></div>
+  <div class="rush-cam" id="rushCam"><video id="rushVideo" playsinline muted></video><div class="rush-line"></div><div class="rush-msg" id="rushMsg">كنحل الكاميرا… (السكانير ديال اليد خدّام حتى هو)</div></div>
+  <div class="rush-new" id="rushNew" hidden><b id="rushNewT">كود جديد · شحال الثمن؟</b><input id="rushPrice" inputmode="decimal" autocomplete="off" aria-label="الثمن"><button type="button" class="primary" id="rushNewOk">زيد</button><button type="button" id="rushNewNo">لا</button></div>
+  <ul class="rush-list" id="rushList"></ul>
+  <div class="rush-quick" id="rushQuick"></div>
+  <div class="rush-pay" id="rushPay"><button type="button" class="exact" data-pay="exact">✓ قدّ قدّ</button><button type="button" data-pay="20">20</button><button type="button" data-pay="50">50</button><button type="button" data-pay="100">100</button><button type="button" data-pay="200">200</button><button type="button" data-pay="other">مبلغ آخر</button><button type="button" class="credit" data-pay="credit">📒 كريدي</button></div>
+</div>
+<div class="rush-change" id="rushChange" hidden><div><span id="rushChangeL">رجّع ليه</span><b id="rushChangeV"></b><span>الكليان الجاي ✓</span></div></div>
 <div class="scanbox" id="scanBox" hidden dir="rtl" lang="ar-MA" role="dialog" aria-modal="true" aria-labelledby="scanTitle">
   <video id="scanVideo" playsinline muted></video>
   <div class="scan-frame" aria-hidden="true"><i></i></div>
@@ -1518,7 +1559,9 @@ function render(){
     pic.onclick=()=>addToBasket(p.id,el);
     pic.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); addToBasket(p.id,el); } };
     const body = document.createElement("div"); body.className="body";
-    const nm=document.createElement("div"); nm.className="name"; nm.textContent=p.name;
+    const nm=document.createElement("div"); nm.className="name"+(p.noName?" noname":""); nm.textContent=p.noName?`✏️ ${p.name} (كتب السمية)`:p.name;
+    nm.setAttribute("role","button"); nm.tabIndex=0; nm.title="بدّل السمية ولا الثمن";
+    nm.onclick=()=>openEditProduct(p.id); nm.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); openEditProduct(p.id); } };
     const ct=document.createElement("div"); ct.className="cat"; ct.textContent=p.cat||"بلا نوع";
     body.append(nm,ct);
     const sp=suppliers.find(s=>s.id===p.supplierId);
@@ -2762,6 +2805,13 @@ function handleScan(raw){
   const code=normCode(raw); if(code.length<4) return;
   if(scanTarget){ const t=scanTarget; scanTarget=null; closeScanner(); beep(true); t(code); return; }
   const p=findByCode(code);
+  if(rushOn){
+    if(!p){ rushAsk(code); return; }
+    if(p.byKg){ beep(true); openKg(p); return; }
+    addToBasket(p.id,null,1); beep(true);
+    const it=curBasket().items.find(i=>!i.custom&&i.productId===p.id);
+    rushSay(`✓ ${p.name} · ${money(p.price)}${it&&it.qty>1?` ×${it.qty}`:""}`,"ok"); return;
+  }
   if(p && p.byKg){
     if(currentTab!=="caisse") showTab("caisse");
     beep(true); const again=!$("#scanBox").hidden; closeScanner();
@@ -2811,17 +2861,18 @@ function gotCode(c){
   if(c!==seenCode || now-seenAt>1200){ seenCode=c; seenAt=now; return; }   // read it twice before trusting it
   seenCode=""; lastCode=c; lastAt=now; handleScan(c);
 }
-async function openScanner(title){
+async function openScanner(title,opt){
+  opt=opt||{};
   $("#scanTitle").textContent=title||"سكاني الكود بار";
   if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ toast("الكاميرا ما خدّاماش هنا. استعمل سكانير، ولا كتب رقم الكود ف الخانة."); return; }
-  $("#scanBox").hidden=false; scanSay("كنحل الكاميرا…");
+  if(!opt.inline) $("#scanBox").hidden=false; scanSay("كنحل الكاميرا…");
   try{ scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false}); }
   catch(e){
-    $("#scanBox").hidden=true; scanStream=null;
+    $("#scanBox").hidden=true; scanStream=null; if(opt.inline) return;
     toast(e&&e.name==="NotAllowedError" ? "ما عطيتيش الإذن للكاميرا. سمح ليها ف الإعدادات ديال المتصفح، و عاود." : "الكاميرا ما خدّاماش هنا. استعمل سكانير، ولا كتب رقم الكود ف الخانة.");
     return;
   }
-  const v=$("#scanVideo"); v.srcObject=scanStream; try{ await v.play(); }catch{}
+  const v=$(opt.video||"#scanVideo"); v.srcObject=scanStream; try{ await v.play(); }catch{}
   scanSay("حط الكود بار وسط الإطار");
   if(!detector && "BarcodeDetector" in window){ try{ detector=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]}); }catch{ detector=null; } }
   if(detector){
@@ -2841,7 +2892,7 @@ function closeScanner(){
   clearTimeout(scanTimer); scanTimer=null;
   try{ zxReader&&zxReader.reset(); }catch{} zxReader=null;
   if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
-  const v=$("#scanVideo"); if(v) v.srcObject=null;
+  ["#scanVideo","#rushVideo"].forEach(id=>{ const v=$(id); if(v) v.srcObject=null; });
   $("#scanBox").hidden=true;
 }
 $("#scanClose").onclick=()=>{ scanTarget=null; closeScanner(); };
@@ -3854,6 +3905,14 @@ function kgForm(){
 }
 $("#pKg").addEventListener("change",kgForm);
 $("#pName").addEventListener("change",()=>{ const x=products.find(p=>norm(p.name)===norm($("#pName").value)); if(x){ $("#pKg").checked=!!x.byKg; kgForm(); } else if(/بالكيلو|بالميزان/.test($("#pName").value)){ $("#pKg").checked=true; kgForm(); } });
+function openEditProduct(id){
+  const p=products.find(x=>x.id===id); if(!p) return;
+  $("#addProductBtn").onclick(); pending.matchId=p.id; pending.edit=true;
+  $("#sheetTitle").textContent="بدّل السلعة"; $("#sheetNote").textContent="بدّل السمية، الثمن ولا الكود. «شحال عندك» = شحال زادت (خلّيها خاوية إلا ما زادتش).";
+  $("#pName").value=p.noName?"":p.name; $("#pCat").value=p.cat||""; $("#pPrice").value=p.price; $("#pMin").value=p.min; $("#pCode").value=p.barcode||"";
+  $("#pQty").value=""; $("#pQty").placeholder="شحال زادت؟"; $("#pKg").checked=!!p.byKg; kgForm();
+  $("#sheetSave").textContent="حفظ"; if(p.photo){ $("#sheetImg").hidden=false; $("#sheetImg").src=p.photo; }
+}
 $("#sheetCancel").onclick=()=>{$("#sheet").hidden=true; pending=null; if(reopenScan){ reopenScan=false; openScanner(); } hidePick("#prodPick","#pName"); hidePick("#catPick","#pCat");};
 
 /* ---------- basics like Marjane: common hanout products to pick from when adding (nothing is pre-filled on the shelf) ---------- */
@@ -3934,9 +3993,11 @@ $("#sheetForm").addEventListener("submit",async e=>{
   let soldId=null;
   if(pending.matchId || same){
     const p=products.find(x=>x.id===(pending.matchId||same.id));
-    await saveProduct({...p,photo:p.photo||pending.photo||"",price:+$("#pPrice").value||p.price,stock:+(p.stock+qty).toFixed(3),barcode:code||p.barcode||"",byKg});
+    const {noName,...pc}=p; const newName=pending.matchId&&nm?nm:p.name;
+    await saveProduct({...pc,name:newName,...(newName===p.name&&noName&&!pending.edit?{noName}:{}),cat:$("#pCat").value.trim()||p.cat||"",photo:p.photo||pending.photo||"",price:+$("#pPrice").value||p.price,stock:+(p.stock+qty).toFixed(3),barcode:code||p.barcode||"",byKg});
     soldId=p.id;
-    if(same && code && !qty){ toast(`تزاد الكود بار ل«${p.name}» ✓`); }
+    if(pending.edit && !qty){ toast(`تبدّلات «${newName}» ✓`); }
+    else if(same && code && !qty){ toast(`تزاد الكود بار ل«${p.name}» ✓`); }
     else { const q=byKg?fmtKg(qty):qty; toast(`زدت ${q} ${p.name}`); speak(`زدت ${q} ${p.name}.`); }
   } else {
     const p={id:newId(),name:nm,cat:$("#pCat").value.trim(),price:+$("#pPrice").value||0,stock:qty,min:byKg?(kgNum($("#pMin").value)||2):Math.round(+$("#pMin").value||5),photo:pending.photo||"",barcode:code,byKg};
@@ -4184,6 +4245,90 @@ function renderQuick(){
 }
 const _renderQ=render;
 render=function(){ _renderQ(); renderQuick(); };
+
+/* ---------- rush mode: the camera stays open, every beep adds, one tap pays, the next client starts by itself ---------- */
+let rushOn=false, rushPending=null;
+function rushSay(t,cls){ const m=$("#rushMsg"); m.textContent=t; m.className="rush-msg"+(cls?" "+cls:""); }
+function paintRush(){
+  if(!rushOn) return;
+  const b=curBasket(), lines=basketLines(b), total=basketTotal(b), n=b.items.reduce((a,i)=>a+(i.kg?1:i.qty),0);
+  $("#rushTotal").textContent=total.toFixed(2);
+  $("#rushWho").textContent=b.client||b.label;
+  $("#rushCount").textContent= n ? `${n} سلعة · درهم` : "لاكيس خاوية · سكاني ولا ضغط على سلعة";
+  const ul=$("#rushList"); ul.innerHTML="";
+  if(!lines.length){ const li=document.createElement("li"); li.className="empty"; li.textContent="كل بيب = سلعة تزادت. ملي يسالي، ضغط على اللي عطاك."; ul.append(li); }
+  for(const l of lines.slice().reverse()){
+    const li=document.createElement("li");
+    const nm=document.createElement("span"); nm.textContent=(l.p&&l.p.byKg?fmtKg(l.qty)+" ":(l.qty>1?l.qty+" × ":""))+l.name;
+    const tt=document.createElement("b"); tt.textContent=l.total.toFixed(2);
+    const rm=document.createElement("button"); rm.type="button"; rm.textContent="−"; rm.setAttribute("aria-label","نقّص "+l.name);
+    rm.onclick=()=>{ snap(); if(l.it.kg||l.it.custom||l.it.qty<=1) b.items=b.items.filter(i=>i!==l.it); else l.it.qty--; saveBaskets(); renderBasket(); };
+    li.append(nm,tt,rm); ul.append(li);
+  }
+  $$rushPay(total);
+}
+function $$rushPay(total){
+  document.querySelectorAll("#rushPay button").forEach(x=>{ const v=x.dataset.pay; x.disabled=!total || (+v>0 && +v<total); });
+}
+function rushQuick(){
+  const g=$("#rushQuick"); g.innerHTML="";
+  const list=quickProducts().slice(0,6); g.hidden=!list.length;
+  for(const p of list){ const bt=document.createElement("button"); bt.type="button";
+    const ic=document.createElement("span"); ic.textContent=productEmoji(p)||"•"; bt.append(ic,document.createTextNode(p.name));
+    bt.onclick=()=>{ addToBasket(p.id,bt); if(!p.byKg){ beep(true); rushSay(`✓ ${p.name} · ${money(p.price)}`,"ok"); } };
+    g.append(bt); }
+}
+async function openRush(){
+  rushOn=true; $("#rush").hidden=false; document.body.classList.add("locked");
+  if(currentTab!=="caisse") showTab("caisse");
+  rushQuick(); paintRush(); rushSay("كنحل الكاميرا… (السكانير ديال اليد خدّام حتى هو)");
+  await openScanner(null,{video:"#rushVideo",inline:true});
+  if(rushOn && !scanStream) rushSay("الكاميرا ما تحلّاتش. استعمل السكانير ديال اليد، ولا ضغط على السلعة لتحت.","bad");
+  else if(rushOn) rushSay("سكاني… كل بيب = سلعة");
+}
+function closeRush(){ rushOn=false; rushPending=null; $("#rushNew").hidden=true; closeScanner(); $("#rush").hidden=true; document.body.classList.remove("locked"); renderBasket(); }
+$("#rushOpen").onclick=openRush;
+$("#rushClose").onclick=closeRush;
+$("#rushUndo").onclick=()=>{ if(undoBasket()) rushSay("↶ رجعت اللور"); else rushSay("ما كاين ما نرجّع"); };
+// a barcode the shop hasn't seen: in a rush, only its price; the name can be written later in the stock
+function rushAsk(code){
+  rushPending=code; beep(false);
+  $("#rushNewT").textContent=`كود جديد (${code.slice(-5)}) · شحال الثمن؟`;
+  $("#rushPrice").value=""; $("#rushNew").hidden=false; setTimeout(()=>$("#rushPrice").focus(),50);
+  rushSay("سلعة جديدة: كتب الثمن ديالها","bad");
+}
+$("#rushNewOk").onclick=async()=>{
+  const code=rushPending, price=+String(toLatinDigits($("#rushPrice").value)).replace(",",".");
+  if(!code) return;
+  if(code.pay){ if(!(price>0)){ $("#rushPrice").focus(); return; } rushPending=null; $("#rushNew").hidden=true; rushPayWith(price); return; } if(!(price>0)){ $("#rushPrice").focus(); return; }
+  const p={id:newId(),name:`سلعة جديدة ${code.slice(-4)}`,cat:"",price,stock:0,min:0,photo:"",barcode:code,noName:true};
+  await saveProduct(p); rushPending=null; $("#rushNew").hidden=true;
+  addToBasket(p.id,null,1); beep(true); rushSay(`✓ تزادت · ${money(price)} (السمية من بعد ف الستوك)`,"ok");
+};
+$("#rushPrice").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#rushNewOk").click(); } });
+$("#rushNewNo").onclick=()=>{ rushPending=null; $("#rushNew").hidden=true; rushSay("سكاني… كل بيب = سلعة"); };
+$("#rushPay").addEventListener("click",async e=>{
+  const bt=e.target.closest("button"); if(!bt||bt.disabled) return;
+  const b=curBasket(), total=basketTotal(b); if(!total) return;
+  const v=bt.dataset.pay;
+  if(v==="credit"){ openCreditSheet(); return; }
+  if(v==="other"){ rushPending={pay:true}; $("#rushNewT").textContent="شحال عطاك الكليان؟"; $("#rushPrice").value=""; $("#rushNew").hidden=false; setTimeout(()=>$("#rushPrice").focus(),50); return; }
+  rushPayWith(v==="exact"?total:+v);
+});
+async function rushPayWith(given){
+  const b=curBasket(), total=basketTotal(b); if(!total) return;
+  if(given<total){ rushSay(`ناقص ${money(total-given)}`,"bad"); return; }
+  $("#bGiven").value=String(given);
+  const change=+(given-total).toFixed(2);
+  await checkoutBasket("cash");
+  $("#rushChangeL").textContent= change>0 ? "رجّع ليه" : "تخلّص ✓";
+  $("#rushChangeV").textContent= change>0 ? money(change) : money(total);
+  $("#rushChange").hidden=false; beep(true);
+  setTimeout(()=>{ $("#rushChange").hidden=true; paintRush(); rushSay("سكاني… الكليان الجاي"); }, change>0?2600:1200);
+}
+$("#rushChange").onclick=()=>{ $("#rushChange").hidden=true; paintRush(); };
+const _rbRush=renderBasket;
+renderBasket=function(){ _rbRush(); paintRush(); };
 const _renderSub=render;
 render=function(){ _renderSub(); subCheck(); };
 setInterval(subCheck,60e3);
