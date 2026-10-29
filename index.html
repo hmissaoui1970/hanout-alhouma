@@ -1703,6 +1703,9 @@ function spokenNormalize(t){
   t=t.replace(/د\.\s?إ\.?|د\.\s?م\.?/g," درهم ");
   t=t.replace(/(^|\s)(?:درام|دراه|درهام|دراهام|دراهامات|دارهم|ديرهم|ديرهام|درهمات|dirhams?|dirham|dhs?\.)(?=\s|$)/gi,"$1دراهم");
   t=t.replace(/(^|\s)(?:جورج|جورش|جوش|غوج)(?=\s|$)/g,"$1جوج");   // "جوج" heard as a name
+  // phones add punctuation ("…دراهم." / "فانتا، 8"): keep decimals (7.5), drop the rest
+  t=t.replace(/(\d)[.,٫](\d)/g,"$1\u0001$2").replace(/[.,،؛;:!?؟«»"“”'()\[\]…\-–—]+/g," ").replace(/\u0001/g,".");
+  t=t.replace(/[\u064B-\u0652]/g,"");   // vowel marks (جوجْ)
   t=t.replace(/(\d)([^\d\s.,])/g,"$1 $2");                       // 4dh -> 4 dh, 1L -> 1 L
   t=t.replace(/(^|\s)(ب|بـ)(\d)/g,"$1$2 $3");                     // ب27 -> ب 27
   // price per piece: "للوحدة / كل وحدة / la pièce" -> @each ; "ضرب 3 / x3 / 3 مرات" -> @x 3 (the app multiplies)
