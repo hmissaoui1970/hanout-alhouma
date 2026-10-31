@@ -4388,11 +4388,11 @@ const W_FAMILIES=[
   {id:"veg",name:"🥕 الخضرة",cat:"الخضرة و الفواكه",items:"🍅 ماطيشة|🥔 بطاطا|🧅 بصلة|🥕 خيزو|🫛 جلبانة|🫑 فلفلة|🥒 خيار|🍆 بادنجال|🎃 قرعة حمرا|🥬 كرنب|🫘 لوبيا خضرا|🧄 تومة|🥒 كرعة|🍋 حامض"},
   {id:"flour",name:"🌾 الطحين و السميدة",cat:"الطحين و السميدة",items:"🌾 طحين|🌾 دقيق|🌾 فارينا|🌾 سميدة|🌾 سميدة رقيقة|🌾 شعير|🍚 كسكس|🍚 روز"},
   {id:"sweet",name:"🍬 الحلويات و التمر",cat:"الحلويات و الفواكه الجافة",items:"🌴 تمر|🥜 كاوكاو|🌰 لوز|🌰 كركاع|🍇 زبيب|🍯 شباكية|🍬 حلوة|🍪 بيسكوي بالميزان"},
-  {id:"other",name:"🫒 القطاني و التوابل",cat:"القطاني و التوابل",items:"🍚 سكر سنيدة|🟤 عدس|⚪ لوبيا|🟡 حمص|🟢 فول|🫒 زيتون|🌶️ تحميرة|🟫 كمون|⚫ إبزار|🟨 كركم|🍵 أتاي بالميزان|🧈 زبدة بلدية"}
+  {id:"other",name:"🫒 القطنية والعطرية",cat:"القطنية والعطرية",old:"القطاني و التوابل",items:"🍚 سكر سنيدة|🟤 عدس|⚪ لوبيا|🟡 حمص|🟢 فول|🫒 زيتون|🌶️ تحميرة|🟫 كمون|⚫ إبزار|🟨 كركم|🍵 أتاي بالميزان|🧈 زبدة بلدية"}
 ];
 let wFam="veg", wPending=null;
 function wList(f){
-  const fam=W_FAMILIES.find(x=>x.id===f), have=products.filter(p=>p.byKg && (p.cat===fam.cat));
+  const fam=W_FAMILIES.find(x=>x.id===f), have=products.filter(p=>p.byKg && (p.cat===fam.cat || (fam.old && p.cat===fam.old)));
   const out=have.map(p=>({p,name:p.name,emo:productEmoji(p)||"⚖️"}));
   for(const it of fam.items.split("|")){ const [emo,...n]=it.split(" "); const name=n.join(" ");
     if(!out.some(x=>norm(x.name)===norm(name)) && !products.some(p=>p.byKg&&norm(p.name)===norm(name))) out.push({p:null,name,emo}); }
