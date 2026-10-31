@@ -117,8 +117,8 @@ body.locked{overflow:hidden}
 .item .name{cursor:pointer}
 .wbtn{width:100%;min-height:48px;margin:0 0 12px;font-weight:800;font-size:16px}
 .wsheet .card{max-height:88vh;display:flex;flex-direction:column;gap:10px}
-.wtabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.wtabs button{min-height:42px;padding:0 8px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;font-weight:700;white-space:nowrap}
+.wtabs{display:flex;flex-wrap:wrap;gap:6px}
+.wtabs button{flex:1 1 auto;min-height:42px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;font-weight:700;white-space:nowrap}
 .wtabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink,#1a0716);border-color:var(--accent)}
 .wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow:auto;min-height:0}
 .witem{display:grid;justify-items:center;gap:2px;padding:8px 4px;min-height:86px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;text-align:center;cursor:pointer}
@@ -4388,11 +4388,12 @@ const W_FAMILIES=[
   {id:"veg",name:"🥕 الخضرة",cat:"الخضرة و الفواكه",items:"🍅 ماطيشة|🥔 بطاطا|🧅 بصلة|🥕 خيزو|🫛 جلبانة|🫑 فلفلة|🥒 خيار|🍆 بادنجال|🎃 قرعة حمرا|🥬 كرنب|🫘 لوبيا خضرا|🧄 تومة|🥒 كرعة|🍋 حامض"},
   {id:"flour",name:"🌾 الطحين و السميدة",cat:"الطحين و السميدة",items:"🌾 طحين|🌾 دقيق|🌾 فارينا|🌾 سميدة|🌾 سميدة رقيقة|🌾 شعير|🍚 كسكس|🍚 روز"},
   {id:"sweet",name:"🍬 الحلويات و التمر",cat:"الحلويات و الفواكه الجافة",items:"🌴 تمر|🥜 كاوكاو|🌰 لوز|🌰 كركاع|🍇 زبيب|🍯 شباكية|🍬 حلوة|🍪 بيسكوي بالميزان"},
-  {id:"other",name:"🫒 القطنية والعطرية",cat:"القطنية والعطرية",old:"القطاني و التوابل",items:"🟤 عدس|⚪ لوبيا|🟡 حمص|🟢 فول|🌿 جلبانة يابسة|🍚 سكر سنيدة|🫒 زيتون|🌶️ تحميرة|🌶️ فلفلة حارة|🟫 كمون|⚫ إبزار|🟨 خرقوم|🫚 سكينجبير|🟤 قرفة|🧂 راس الحانوت|🌱 نافع|🌰 كروية|⚪ جنجلان|🌸 قرنفل|🌼 زعفران|🍵 أتاي بالميزان|🧈 زبدة بلدية"}
+  {id:"legume",name:"🫘 القطنية",cat:"القطنية",old:["القطنية والعطرية","القطاني و التوابل"],items:"🟤 عدس|⚪ لوبيا|🟡 حمص|🟢 فول|🌿 جلبانة يابسة|🍚 سكر سنيدة|🫒 زيتون|🍵 أتاي بالميزان|🧈 زبدة بلدية"},
+  {id:"spice",name:"🌶️ العطرية",cat:"العطرية",items:"🌶️ تحميرة|🌶️ فلفلة حارة|🟫 كمون|⚫ إبزار|🟨 خرقوم|🫚 سكينجبير|🟤 قرفة|🧂 راس الحانوت|🌱 نافع|🌰 كروية|⚪ جنجلان|🌸 قرنفل|🌼 زعفران"}
 ];
 let wFam="veg", wPending=null;
 function wList(f){
-  const fam=W_FAMILIES.find(x=>x.id===f), have=products.filter(p=>p.byKg && (p.cat===fam.cat || (fam.old && p.cat===fam.old)));
+  const fam=W_FAMILIES.find(x=>x.id===f), have=products.filter(p=>p.byKg && (p.cat===fam.cat || (fam.old||[]).includes(p.cat)) && (fam.id!=="legume" || !W_FAMILIES.some(f=>f.id!=="legume" && f.items.split("|").some(it=>norm(it.split(" ").slice(1).join(" "))===norm(p.name)))));
   const out=have.map(p=>({p,name:p.name,emo:productEmoji(p)||"⚖️"}));
   for(const it of fam.items.split("|")){ const [emo,...n]=it.split(" "); const name=n.join(" ");
     if(!out.some(x=>norm(x.name)===norm(name)) && !products.some(p=>p.byKg&&norm(p.name)===norm(name))) out.push({p:null,name,emo}); }
