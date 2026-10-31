@@ -115,6 +115,19 @@ body.locked{overflow:hidden}
 .rush button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .item .name.noname{color:var(--accent);font-weight:800}
 .item .name{cursor:pointer}
+.wbtn{width:100%;min-height:48px;margin:0 0 12px;font-weight:800;font-size:16px}
+.wsheet .card{max-height:88vh;display:flex;flex-direction:column;gap:10px}
+.wtabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.wtabs button{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;font-weight:700;white-space:nowrap}
+.wtabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink,#1a0716);border-color:var(--accent)}
+.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow:auto;min-height:0}
+.witem{display:grid;justify-items:center;gap:2px;padding:8px 4px;min-height:86px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:inherit;text-align:center;cursor:pointer}
+.witem .we{font-size:26px;line-height:1.1}.witem .wn{font-size:12.5px;font-weight:700;line-height:1.25}.witem .wp{font-size:11.5px;color:var(--muted)}
+.witem.new .wp{color:var(--accent)}
+.wprice{display:grid;gap:8px;padding:10px;border-radius:14px;border:1px solid var(--accent);background:var(--sunk)}
+.wprice .row{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center}
+.wprice input{min-height:46px;font-size:22px;text-align:center;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+@media (max-width:360px){.wgrid{grid-template-columns:repeat(3,1fr)}}
 .btn.scanbig{width:100%;min-height:60px;margin:2px 0 12px;display:flex!important;align-items:center;justify-content:center;gap:10px;font-size:19px!important;font-weight:800!important;background:var(--grad)!important;color:var(--accent-ink)!important;border:0!important;border-radius:18px!important;box-shadow:0 10px 30px -8px rgba(255,79,163,.6)}
 .scanbig svg{width:26px;height:26px}
 .codebox{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
@@ -1054,6 +1067,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <div class="btabs" id="btabs"></div>
       <button class="btn scanbig" id="bScan" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>سكاني الكود بار</button>
       <button class="btn rushbtn" id="rushOpen" type="button">⚡ وضع الزحام: سكاني و خلّص بلا ما تحبس</button>
+      <button class="btn wbtn" id="wOpen" type="button">⚖️ الميزان: الخضرة، الطحين، الحلويات…</button>
       <div class="qtap" id="quickBox" hidden><h3>ضغطة وحدة: السلعة اللي كتبيع بزاف</h3><div class="qgrid" id="quickGrid"></div></div>
 
       <form class="calc" id="calcForm">
@@ -1176,6 +1190,19 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <div id="shopPickList" style="display:grid;gap:8px"></div>
     <button class="btn" id="shopPickNew" type="button">+ زيد حانوت جديد</button>
     <button class="btn" id="shopPickClose" type="button">سدّ</button>
+  </div>
+</div>
+<div class="sheet wsheet" id="wSheet" hidden dir="rtl" lang="ar-MA">
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 id="wTitle" style="margin:0">⚖️ السلعة بالميزان</h2><button type="button" class="btn" id="wClose">سدّ</button></div>
+    <div class="wtabs" id="wTabs" role="tablist"></div>
+    <div class="wprice" id="wPrice" hidden>
+      <div class="row"><b id="wPriceT">ثمن الكيلو؟</b><input id="wPriceIn" inputmode="none" readonly aria-label="ثمن الكيلو"></div>
+      <div class="rush-pad" id="wPad"><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button">5</button><button type="button">6</button><button type="button">7</button><button type="button">8</button><button type="button">9</button><button type="button">.</button><button type="button">0</button><button type="button" data-k="del" aria-label="مسح">⌫</button></div>
+      <div class="actions"><button type="button" class="btn" id="wPriceNo">لغي</button><button type="button" class="btn primary" id="wPriceOk">حفظ و زيد</button></div>
+    </div>
+    <div class="wgrid" id="wGrid"></div>
+    <p class="note" style="margin:0">ضغط على السلعة، و ختار الوزن ولا بشحال. اللي ما عندهاش ثمن، كتب ثمن الكيلو مرة وحدة.</p>
   </div>
 </div>
 <div class="sheet" id="kgSheet" hidden dir="rtl" lang="ar-MA">
@@ -4280,7 +4307,8 @@ function $$rushPay(total){
 }
 function rushQuick(){
   const g=$("#rushQuick"); g.innerHTML="";
-  const list=quickProducts().slice(0,6); g.hidden=!list.length;
+  const list=quickProducts().slice(0,5); g.hidden=false;
+  { const wb=document.createElement("button"); wb.type="button"; const ic=document.createElement("span"); ic.textContent="⚖️"; wb.append(ic,document.createTextNode("الميزان")); wb.onclick=openW; g.append(wb); }
   for(const p of list){ const bt=document.createElement("button"); bt.type="button";
     const ic=document.createElement("span"); ic.textContent=productEmoji(p)||"•"; bt.append(ic,document.createTextNode(p.name));
     bt.onclick=()=>{ addToBasket(p.id,bt); if(!p.byKg){ beep(true); rushSay(`✓ ${p.name} · ${money(p.price)}`,"ok"); } };
@@ -4354,6 +4382,57 @@ async function rushPayWith(given){
 $("#rushChange").onclick=()=>{ $("#rushChange").hidden=true; paintRush(); };
 const _rbRush=renderBasket;
 renderBasket=function(){ _rbRush(); paintRush(); };
+
+/* ---------- ⚖️ the scale: families of products sold by weight; one tap = the weight pad ---------- */
+const W_FAMILIES=[
+  {id:"veg",name:"🥕 الخضرة",cat:"الخضرة و الفواكه",items:"🍅 ماطيشة|🥔 بطاطا|🧅 بصلة|🥕 خيزو|🫛 جلبانة|🫑 فلفلة|🥒 خيار|🍆 بادنجال|🎃 قرعة حمرا|🥬 كرنب|🫘 لوبيا خضرا|🧄 تومة|🥒 كرعة|🍋 حامض"},
+  {id:"flour",name:"🌾 الطحين و السميدة",cat:"الطحين و السميدة",items:"🌾 طحين|🌾 دقيق|🌾 فارينا|🌾 سميدة|🌾 سميدة رقيقة|🌾 شعير|🍚 كسكس|🍚 روز"},
+  {id:"sweet",name:"🍬 الحلويات و التمر",cat:"الحلويات و الفواكه الجافة",items:"🌴 تمر|🥜 كاوكاو|🌰 لوز|🌰 كركاع|🍇 زبيب|🍯 شباكية|🍬 حلوة|🍪 بيسكوي بالميزان"},
+  {id:"other",name:"🫒 القطاني و التوابل",cat:"القطاني و التوابل",items:"🍚 سكر سنيدة|🟤 عدس|⚪ لوبيا|🟡 حمص|🟢 فول|🫒 زيتون|🌶️ تحميرة|🟫 كمون|⚫ إبزار|🟨 كركم|🍵 أتاي بالميزان|🧈 زبدة بلدية"}
+];
+let wFam="veg", wPending=null;
+function wList(f){
+  const fam=W_FAMILIES.find(x=>x.id===f), have=products.filter(p=>p.byKg && (p.cat===fam.cat));
+  const out=have.map(p=>({p,name:p.name,emo:productEmoji(p)||"⚖️"}));
+  for(const it of fam.items.split("|")){ const [emo,...n]=it.split(" "); const name=n.join(" ");
+    if(!out.some(x=>norm(x.name)===norm(name)) && !products.some(p=>p.byKg&&norm(p.name)===norm(name))) out.push({p:null,name,emo}); }
+  // a weighed product already in the stock under another family still shows where it belongs
+  for(const p of products) if(p.byKg && !out.some(x=>x.p===p)){ const k=fam.items.split("|").some(it=>norm(it.split(" ").slice(1).join(" "))===norm(p.name)); if(k) out.unshift({p,name:p.name,emo:productEmoji(p)||"⚖️"}); }
+  return out;
+}
+function renderW(){
+  const tabs=$("#wTabs"); tabs.innerHTML="";
+  for(const f of W_FAMILIES){ const b=document.createElement("button"); b.type="button"; b.textContent=f.name; b.setAttribute("aria-pressed",String(f.id===wFam)); b.onclick=()=>{ wFam=f.id; $("#wPrice").hidden=true; renderW(); }; tabs.append(b); }
+  const g=$("#wGrid"); g.innerHTML="";
+  for(const x of wList(wFam)){
+    const b=document.createElement("button"); b.type="button"; b.className="witem"+(x.p?"":" new");
+    const e=document.createElement("span"); e.className="we"; e.textContent=x.emo;
+    const n=document.createElement("span"); n.className="wn"; n.textContent=x.name;
+    const pr=document.createElement("span"); pr.className="wp"; pr.textContent=x.p?`${(+x.p.price).toFixed(2)} / كيلو`:"+ ثمن الكيلو";
+    b.append(e,n,pr);
+    b.onclick=()=>{ if(x.p){ $("#wSheet").hidden=true; openKg(x.p,()=>{ if(rushOn) paintRush(); }); } else wAskPrice(x); };
+    g.append(b);
+  }
+}
+function wAskPrice(x){
+  wPending=x; $("#wPriceT").textContent=`${x.emo} ${x.name} · ثمن الكيلو؟`; $("#wPriceIn").value=""; $("#wPrice").hidden=false;
+}
+$("#wPad").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; const inp=$("#wPriceIn");
+  if(b.dataset.k==="del") inp.value=inp.value.slice(0,-1);
+  else if(b.textContent==="."){ if(!inp.value.includes(".")) inp.value=(inp.value||"0")+"."; }
+  else if(inp.value.length<7) inp.value+=b.textContent; });
+$("#wPriceNo").onclick=()=>{ wPending=null; $("#wPrice").hidden=true; };
+$("#wPriceOk").onclick=async()=>{
+  const x=wPending, price=+$("#wPriceIn").value; if(!x) return; if(!(price>0)){ toast("كتب ثمن الكيلو."); return; }
+  const fam=W_FAMILIES.find(f=>f.id===wFam);
+  const p={id:newId(),name:x.name,cat:fam.cat,price,stock:0,min:0,photo:"",barcode:"",byKg:true};
+  await saveProduct(p); wPending=null; $("#wPrice").hidden=true;
+  toast(`${x.name}: ${money(price)} للكيلو ✓ تحفظات ف الستوك`);
+  $("#wSheet").hidden=true; const sp=products.find(q=>q.id===p.id)||p; openKg(sp,()=>{ if(rushOn) paintRush(); });
+};
+function openW(){ $("#wPrice").hidden=true; renderW(); $("#wSheet").hidden=false; }
+$("#wOpen").onclick=openW;
+$("#wClose").onclick=()=>{ $("#wSheet").hidden=true; };
 const _renderSub=render;
 render=function(){ _renderSub(); subCheck(); };
 setInterval(subCheck,60e3);
