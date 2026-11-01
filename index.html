@@ -1224,9 +1224,9 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
   <div class="card welc" role="dialog" aria-modal="true" aria-labelledby="welT">
     <h2 id="welT"></h2>
     <div class="who"><b id="welShop"></b><span id="welCity"></span><span class="note" id="welPhone" dir="ltr"></span></div>
-    <p class="note" style="margin:0">التسجيل تقاد ✓ ضغط لتحت باش توصلك رسالة الترحيب ف الواتساب ديالك، و ضغط «صيفط» ف واتساب.</p>
-    <a class="btn primary" id="welMine" target="_blank" rel="noopener">📲 صيفط الترحيب ل الواتساب ديالي</a>
-    <a class="btn" id="welProv" target="_blank" rel="noopener" hidden>📨 صيفط التسجيل ل حانوت الحومة الذكي</a>
+    <p class="note" style="margin:0" id="welNote">آخر خطوة: ضغط لتحت، و ف واتساب ضغط «صيفط». غادي توصلك رسالة الترحيب ديال حانوت الحومة الذكي.</p>
+    <a class="btn primary" id="welProv" target="_blank" rel="noopener" hidden>📨 كمّل التسجيل ف واتساب</a>
+    <a class="btn" id="welMine" target="_blank" rel="noopener">📲 صيفط المعلومات ل الواتساب ديالي</a>
     <button class="btn" id="welClose" type="button">يالاه نبداو</button>
   </div>
 </div>
@@ -2557,11 +2557,14 @@ function showWelcome(o){
   $("#welMine").href=`https://wa.me/${waNumber(o.phone)}?text=${encodeURIComponent(welcomeText(o))}`;
   const pn=waNumber(PROVIDER_WA);
   $("#welProv").hidden=!pn;
-  if(pn) $("#welProv").href=`https://wa.me/${pn}?text=${encodeURIComponent(`تسجيل جديد ف حانوت الحومة الذكي\nالسمية: ${o.name||""}\nالحانوت: ${o.shop||""}\nالواتساب: ${o.phone||""}\nالمدينة: ${o.city||""}`)}`;
+  if(pn) $("#welProv").href=`https://wa.me/${pn}?text=${encodeURIComponent(`سلام، سجّلت ف حانوت الحومة الذكي ✓\nالسمية: ${o.name||""}\nالحانوت: ${o.shop||""}\nالمدينة: ${o.city||""}\nالواتساب: ${o.phone||""}`)}`;
+  // without your number, the owner can still keep the details on his own WhatsApp
+  $("#welMine").className = pn ? "btn" : "btn primary";
+  $("#welNote").textContent = pn ? "آخر خطوة: ضغط لتحت، و ف واتساب ضغط «صيفط». غادي توصلك رسالة الترحيب ديال حانوت الحومة الذكي." : "التسجيل تقاد ✓ ضغط لتحت باش تحفظ المعلومات ف الواتساب ديالك.";
   $("#welSheet").hidden=false;
   if(WELCOME_URL){
     $("#welMine").hidden=true; $("#welProv").hidden=true;
-    const note=$("#welSheet .note"); note.textContent="كنصيفطو ليك رسالة الترحيب ف الواتساب…";
+    const note=$("#welNote"); note.textContent="كنصيفطو ليك رسالة الترحيب ف الواتساب…";
     welcomeAuto(o).then(ok=>{ note.textContent= ok ? "✓ صيفطنا ليك رسالة الترحيب ف الواتساب ديالك." : "ما كاينش الأنترنيت دابا. رسالة الترحيب غادي توصلك ملي يرجع الأنترنيت."; });
   }
 }
