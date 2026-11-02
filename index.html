@@ -2405,7 +2405,7 @@ $("#onbSlides").addEventListener("touchstart",e=>{ tx=e.touches[0].clientX; },{p
 $("#onbSlides").addEventListener("touchend",e=>{ if(tx==null) return; const dx=e.changedTouches[0].clientX-tx; tx=null; if(Math.abs(dx)<40) return; onbShow(onbI+(dx>0?1:-1)); },{passive:true}); /* RTL: swipe right = next */
 document.addEventListener("keydown",e=>{ if($("#onb").hidden) return; if(e.key==="ArrowLeft") onbShow(onbI+1); if(e.key==="ArrowRight") onbShow(onbI-1); if(e.key==="Escape" && ownerComplete()) closeOnb(); });
 /* your WhatsApp number (the app maker): new owners can send you their registration */
-const PROVIDER_WA="+1 617 952 8524";
+const PROVIDER_WA="+1 347 358 5786";
 function regMessage(){
   return `تسجيل جديد ف حانوت الحومة الذكي\nالسمية: ${$("#ownName").value.trim()}\nالحانوت: ${$("#shopName").value.trim()}\nالواتساب: ${$("#shopPhone").value.trim()}\nالمدينة: ${$("#shopCity").value.trim()}`;
 }
