@@ -1436,6 +1436,37 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 <div class="toast" id="toast" hidden dir="rtl"></div>
 
 <script>
+/* ---------- crash guard: an error never freezes the shop; the data stays saved, and a report can go to WhatsApp ---------- */
+window.APP_VERSION="2026.11.10";
+(function(){
+  const seen={}; let shownAt=0; const log=[];
+  function wa(){ try{ return String((typeof PROVIDER_WA!=="undefined"&&PROVIDER_WA)||"").replace(/\D/g,""); }catch{ return ""; } }
+  function show(msg,where){
+    const now=Date.now(); log.push(`${new Date().toISOString()} ${msg} @ ${where}`); if(log.length>10) log.shift();
+    if(now-shownAt<60000) return; shownAt=now;
+    let box=document.getElementById("crashBox");
+    if(!box){
+      box=document.createElement("div"); box.id="crashBox"; box.setAttribute("role","alert"); box.dir="rtl";
+      box.style.cssText="position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:90;padding:12px 14px;border-radius:16px;background:var(--surface,#2a0c24);color:var(--ink,#fff4f8);border:1px solid var(--accent,#ff4fa3);box-shadow:0 12px 40px rgba(0,0,0,.45);display:grid;gap:8px;font:15px/1.5 inherit";
+      box.innerHTML='<b>وقع مشكل صغير ف التطبيق.</b><span>المعلومات ديالك محفوظة. كمّل الخدمة عادي، و إلا تعاود، صيفط لينا التقرير.</span><div style="display:flex;gap:8px;flex-wrap:wrap"><a id="crashSend" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:10px;border-radius:12px;background:var(--accent,#ff4fa3);color:#1a0716;font-weight:800;text-decoration:none">📨 صيفط التقرير</a><button type="button" id="crashReload" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line,#4f1d45);background:transparent;color:inherit;font:inherit;font-weight:700">↻ عاود حلّ</button><button type="button" id="crashClose" style="padding:10px 14px;border-radius:12px;border:1px solid var(--line,#4f1d45);background:transparent;color:inherit;font:inherit">✕</button></div>';
+      document.body.append(box);
+      box.querySelector("#crashClose").onclick=()=>box.remove();
+      box.querySelector("#crashReload").onclick=()=>location.reload();
+    }
+    const n=wa(), a=box.querySelector("#crashSend");
+    const tab=(document.querySelector('nav.tabs [aria-selected="true"]')||{}).textContent||"";
+    const rep=`تقرير مشكل · حانوت الحومة الذكي\nالنسخة: ${window.APP_VERSION}\nالصفحة: ${tab.trim()}\nالتيليفون: ${navigator.userAgent.slice(0,120)}\n\n${log.slice(-5).join("\n").slice(0,900)}`;
+    if(n){ a.href=`https://wa.me/${n}?text=${encodeURIComponent(rep)}`; a.hidden=false; } else a.hidden=true;
+  }
+  function harmless(m,src){
+    return !m || /ResizeObserver loop|Script error\.?$|AbortError|NotAllowedError|play\(\) request|The operation was aborted|Load failed|NetworkError|Failed to fetch|zxing|ZXing/i.test(m) || (src && !/hanout|github\.io|localhost|^file:|\/index\.html|claude/i.test(src) && /^https?:/.test(src));
+  }
+  window.addEventListener("error",e=>{ const m=(e.error&&e.error.message)||e.message||""; if(harmless(m,e.filename)) return; const k=m+e.lineno; if(seen[k]>3) return; seen[k]=(seen[k]||0)+1; show(m,`${(e.filename||"").split("/").pop()}:${e.lineno}`); });
+  window.addEventListener("unhandledrejection",e=>{ const r=e.reason, m=(r&&(r.message||r.code))||String(r||""); if(harmless(m)) return; const k="p:"+m; if(seen[k]>3) return; seen[k]=(seen[k]||0)+1; show(m,"promise"); });
+  window.__hanoutCrashLog=log;
+})();
+</script>
+<script>
 const $ = s => document.querySelector(s);
 const money = n => (Number(n)||0).toFixed(2) + " درهم";
 const startOfDay = () => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); };
