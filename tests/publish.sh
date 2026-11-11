@@ -8,7 +8,7 @@ if ! timeout 300 node smoke.js "$SRC" 2>&1 | grep -v agent-proxy | tee /tmp/clau
 cp "$SRC" /mnt/user-data/outputs/hanout-online/index.html
 cp "$SRC" /home/claude/hanout-alhouma/index.html
 mkdir -p /home/claude/hanout-alhouma/tests && cp smoke.js publish.sh /home/claude/hanout-alhouma/tests/
-cp /home/claude/public/hanout.html /mnt/user-data/outputs/hanout-code/other-versions/customer-page-claude.html
+[ -f /home/claude/public/hanout.html ] && cp /home/claude/public/hanout.html /mnt/user-data/outputs/hanout-code/other-versions/customer-page-claude.html || true
 cd /home/claude/hanout-alhouma && git add -A && git -c user.name="hmissaoui1970" -c user.email="hmissaoui1970@users.noreply.github.com" commit -q -m "$1
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

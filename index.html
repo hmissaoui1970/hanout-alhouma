@@ -1437,7 +1437,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 
 <script>
 /* ---------- crash guard: an error never freezes the shop; the data stays saved, and a report can go to WhatsApp ---------- */
-window.APP_VERSION="2026.11.10";
+window.APP_VERSION="2026.11.11";
 (function(){
   const seen={}; let shownAt=0; const log=[];
   function wa(){ try{ return String((typeof PROVIDER_WA!=="undefined"&&PROVIDER_WA)||"").replace(/\D/g,""); }catch{ return ""; } }
@@ -2847,7 +2847,9 @@ $("#shopPickNew").onclick=()=>{
 
 /* ---------- barcodes: the phone camera, or a scanner gun (it types the digits + Enter like a keyboard) ---------- */
 const normCode=c=>toLatinDigits(String(c||"")).replace(/\s+/g,"").trim();
-const findByCode=c=>{ c=normCode(c); return c?products.find(p=>(p.barcode && normCode(p.barcode)===c)||(p.labelCode && normCode(p.labelCode)===c)):null; };
+const findByCode1=c=>c?products.find(p=>(p.barcode && normCode(p.barcode)===c)||(p.labelCode && normCode(p.labelCode)===c)):null;
+// a scanner can send the same packet as UPC-A (12 digits) or EAN-13 (the same with a 0 in front): both find it
+const findByCode=c=>{ c=normCode(c); if(!c) return null; return findByCode1(c) || (/^\d{12}$/.test(c)?findByCode1("0"+c):null) || (/^0\d{12}$/.test(c)?findByCode1(c.slice(1)):null); };
 function eanCheck(d12){ let s=0; for(let i=0;i<12;i++) s+=(+d12[i])*(i%2?3:1); return String((10-s%10)%10); }
 // codes for products that have none: EAN-13 starting with 2 (kept for in-store use), so never a factory code
 function newShopCode(){
@@ -2918,11 +2920,12 @@ function codeLooksRight(c){
   return c.length>=6 && c.length<=14;
 }
 let seenCode="", seenAt=0;
-function gotCode(c){
+function gotCode(c,sure){
   c=normCode(c); const now=Date.now();
   if(!c || !codeLooksRight(c)) return;
   if(c===lastCode && now-lastAt<1600) return;             // the same packet still in front of the camera
-  if(c!==seenCode || now-seenAt>1200){ seenCode=c; seenAt=now; return; }   // read it twice before trusting it
+  const checked=sure && /^\d{8}$|^\d{12,13}$/.test(c);   // the phone's own reader + a right check digit: no need to wait
+  if(!checked && (c!==seenCode || now-seenAt>1200)){ seenCode=c; seenAt=now; return; }   // read it twice before trusting it
   seenCode=""; lastCode=c; lastAt=now; handleScan(c);
 }
 async function openScanner(title,opt){
@@ -2941,14 +2944,14 @@ async function openScanner(title,opt){
   scanSay("حط الكود بار وسط الإطار");
   if(!detector && "BarcodeDetector" in window){ try{ detector=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]}); }catch{ detector=null; } }
   if(detector){
-    const tick=async()=>{ if(!scanStream) return; if(v.readyState>=2){ try{ const r=await detector.detect(v); if(r&&r.length) gotCode(r[0].rawValue); }catch{} } scanTimer=setTimeout(tick,110); };
+    const tick=async()=>{ if(!scanStream) return; if(v.readyState>=2){ try{ const r=await detector.detect(v); if(r&&r.length) gotCode(r[0].rawValue,true); }catch{} } scanTimer=setTimeout(tick,80); };
     tick();
   } else {
     try{
       await loadZXing(); if(!scanStream) return;
       const hints=new Map(), F=ZXing.BarcodeFormat;
       hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128]);
-      zxReader=new ZXing.BrowserMultiFormatReader(hints);
+      zxReader=new ZXing.BrowserMultiFormatReader(hints); try{ zxReader.timeBetweenDecodingAttempts=60; }catch{}   // it waits 0.5 s between tries by default
       zxReader.decodeFromStream(scanStream, v, res=>{ if(res && scanStream) gotCode(res.getText()); });
     }catch{ scanSay("ما قدرتش نقرا الكود ف هاد التيليفون. كتب الرقم ف الخانة، ولا استعمل سكانير."); }
   }
@@ -2961,32 +2964,51 @@ function closeScanner(){
   $("#scanBox").hidden=true;
 }
 $("#scanClose").onclick=()=>{ scanTarget=null; closeScanner(); };
+if(!("BarcodeDetector" in window)) setTimeout(()=>{ loadZXing().catch(()=>{}); },4000);
 $("#bScan").onclick=()=>{ scanTarget=null; openScanner(); };
 $("#pCodeScan").onclick=()=>{ scanTarget=code=>{ const other=findByCode(code); $("#pCode").value=code; if(other && !(pending&&pending.matchId===other.id)) toast(`هاد الكود ديجا ديال «${other.name}».`); }; openScanner("سكاني الكود ديال هاد السلعة"); };
 $("#pCodeNew").onclick=()=>{ $("#pCode").value=newShopCode(); toast("تدار كود جديد لهاد السلعة ✓"); };
-/* scanner gun: digits arriving a few ms apart, then Enter */
-let kbBuf="", kbLast=0, kbStart=0;
+/* scanner gun: digits arriving a few ms apart, then Enter (or Tab, or nothing) */
+let kbBuf="", kbLast=0, kbStart=0, kbFast=0, kbLeak=0, kbTimer=null;
+// the digit from the key itself, not from the keyboard layout: on a French AZERTY phone a gun set for QWERTY types «&é"'(» instead of «12345»
+function gunChar(e){
+  const m=/^(?:Digit|Numpad)(\d)$/.exec(e.code||""); if(m) return m[1];
+  return e.key && e.key.length===1 && /[0-9A-Za-z-]/.test(e.key) ? e.key : null;
+}
+function gunIsFast(now){ return kbBuf.length>=6 && (now-kbStart) <= kbBuf.length*50+120; }
+function gunFinish(){
+  clearTimeout(kbTimer); kbTimer=null;
+  const code=kbBuf, leak=code.slice(0,kbLeak); kbBuf=""; kbFast=0; kbLeak=0;
+  const el=document.activeElement;
+  if(el && el.id==="pCode"){ el.value=code; return; }
+  // the first digits may have landed in a box before we knew it was the gun: take them out again
+  if(leak && el && (el.tagName==="INPUT"||el.tagName==="TEXTAREA") && typeof el.value==="string" && el.value.endsWith(leak)) el.value=el.value.slice(0,-leak.length);
+  const rp=$("#rushPrice"); if(rp && leak && rp.value.endsWith(leak)) rp.value=rp.value.slice(0,-leak.length);
+  // a scanner gun is here: the camera isn't needed (saves battery and room on the screen)
+  if(rushOn && scanStream){ closeScanner(); $("#rushCam").hidden=true; $("#rushCamBtn").hidden=false; }
+  try{ localStorage.setItem("hanout-gun","1"); }catch{}
+  handleScan(code);
+}
 document.addEventListener("keydown",e=>{
   if(!$("#lock").hidden || !$("#onb").hidden) return;
   const now=performance.now();
-  if(e.key==="Enter"){
-    const fast = kbBuf.length>=6 && (now-kbStart) <= kbBuf.length*50+120;
-    if(fast){
-      const code=kbBuf; kbBuf="";
-      e.preventDefault(); e.stopImmediatePropagation();
-      const el=document.activeElement;
-      if(el && el.id==="pCode"){ el.value=code; return; }
-      if(el && el.tagName==="INPUT" && typeof el.value==="string" && el.value.endsWith(code)) el.value=el.value.slice(0,-code.length);
-      const rp=$("#rushPrice"); if(rp && rp.value.endsWith(code)) rp.value=rp.value.slice(0,-code.length);
-      // a scanner gun is here: the camera isn't needed (saves battery and room on the screen)
-      if(rushOn && scanStream){ closeScanner(); $("#rushCam").hidden=true; $("#rushCamBtn").hidden=false; }
-      try{ localStorage.setItem("hanout-gun","1"); }catch{}
-      handleScan(code); return;
-    }
-    kbBuf=""; return;
+  if(e.key==="Enter" || e.key==="Tab"){
+    if(gunIsFast(now)){ e.preventDefault(); e.stopImmediatePropagation(); gunFinish(); return; }
+    clearTimeout(kbTimer); kbBuf=""; kbFast=0; kbLeak=0; return;
   }
-  if(e.key && e.key.length===1 && /[0-9A-Za-z-]/.test(e.key)){ if(now-kbLast>70){ kbBuf=""; kbStart=now; } kbBuf+=e.key; kbLast=now; }
-  else if(e.key!=="Shift") kbBuf="";
+  const ch=gunChar(e);
+  if(ch){
+    if(now-kbLast>70){ kbBuf=""; kbStart=now; kbFast=0; kbLeak=0; }
+    else if(now-kbLast<35) kbFast++;
+    kbBuf+=ch; kbLast=now;
+    // from the 4th fast key on it is surely the gun: keep the digits out of whatever box is open
+    if(kbFast>=3){ e.preventDefault(); e.stopImmediatePropagation(); } else kbLeak=kbBuf.length;
+    // a gun set to send no Enter: the code ends when the keys stop
+    clearTimeout(kbTimer);
+    kbTimer=setTimeout(()=>{ if(kbBuf.length>=8 && kbFast>=4 && gunIsFast(kbLast)) gunFinish(); },140);
+    return;
+  }
+  if(e.key!=="Shift"){ clearTimeout(kbTimer); kbBuf=""; kbFast=0; kbLeak=0; }
 },true);
 
 

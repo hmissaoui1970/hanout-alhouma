@@ -52,6 +52,32 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     await page.click('#sheetCancel');
   });
 
+  // a scan gun = a keyboard typing very fast; AZERTY phones turn digits into &é"'( so the app reads the key, not the letter
+  const gun=(code,end)=>ev(([code,end])=>{ const az={1:"&",2:"é",3:'"',4:"'",5:"(",6:"-",7:"è",8:"_",9:"ç",0:"à"};
+    for(const d of code) document.dispatchEvent(new KeyboardEvent('keydown',{key:az[d]||d,code:"Digit"+d,bubbles:true,cancelable:true}));
+    if(end) document.dispatchEvent(new KeyboardEvent('keydown',{key:end,code:end,bubbles:true,cancelable:true})); },[code,end]);
+  await t("scan gun on an AZERTY phone (Enter at the end)",async()=>{
+    await ev(()=>{ showTab('caisse'); curBasket().items=[]; saveBaskets(); });
+    await gun('5449000000996','Enter'); await page.waitForTimeout(50);
+    ok(await ev(()=>basketTotal(curBasket())===9),"gun code not read: "+await ev(()=>basketTotal(curBasket())));
+  });
+  await t("scan gun with no Enter (code ends when the keys stop)",async()=>{
+    await gun('5449000000996',null); await page.waitForTimeout(300);
+    ok(await ev(()=>basketTotal(curBasket())===18),"second scan not added");
+  });
+  await t("scan gun: first digits that fell into a box are taken out",async()=>{
+    await ev(()=>{ const i=document.getElementById('bGiven'); i.value="20544"; i.focus(); });
+    await gun('5449000000996','Tab'); await page.waitForTimeout(50);
+    ok((await page.inputValue('#bGiven'))==="20","box keeps: "+await page.inputValue('#bGiven'));
+    ok(await ev(()=>basketTotal(curBasket())===27),"third scan not added");
+    await ev(()=>document.activeElement.blur());
+  });
+  await t("UPC-A (12 digits) finds the EAN-13 product",async()=>{
+    await ev(async()=>{ await saveProduct({id:'t-upc',name:'بسكوي تجربة',price:4,stock:5,min:1,barcode:'0012345678905'}); curBasket().items=[]; saveBaskets(); handleScan('012345678905'); });
+    ok(await ev(()=>basketTotal(curBasket())===4),"UPC not matched");
+    await ev(()=>{ curBasket().items=[]; saveBaskets(); });
+  });
+
   await t("voice text: quantity, item, price (iPhone punctuation)",async()=>{
     const r=await ev(()=>parseSpokenLines("تلاتة كوكا عشرة دراهم. و جورج فانتا، ٨ د.إ").map(l=>[l.qty,l.price]));
     ok(JSON.stringify(r)==='[[3,30],[2,16]]',"got "+JSON.stringify(r));   // totals: 3x10, 2x8
