@@ -971,6 +971,12 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 #onb .onb-go::after{content:"←";margin-inline-start:12px;font-weight:800}
 #onb .onb-go.notready{opacity:.55}
 #onb .onb-switch{color:#ff8cc6}
+
+/* share card */
+.sharecard{display:grid;gap:12px;text-align:center;justify-items:stretch}
+.sharecard .shareqr{width:min(72vw,300px);height:auto;margin:4px auto;border-radius:22px;background:#fff;padding:10px;box-shadow:0 0 0 4px rgba(255,79,163,.55),0 0 34px rgba(236,72,153,.45)}
+.sharecard a.btn{text-decoration:none}
+.sharecard .sharelink{font-size:14px;color:var(--muted);word-break:break-all}
 </style>
 
 </head>
@@ -1167,6 +1173,11 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <input type="file" id="backupFile" accept="application/json,.json" hidden>
     </div>
   </section>
+  <section class="supwrap" id="shareSec">
+    <h2>شارك التطبيق</h2>
+    <p class="note" style="margin:0">عندك صاحبك عندو حانوت؟ خليه يسكاني الكود بالكاميرا ديال التيليفون ديالو، ولا صيفط ليه الرابط.</p>
+    <div class="actions" style="justify-content:flex-start"><button class="btn primary" id="shareOpen" type="button">📲 شارك التطبيق</button></div>
+  </section>
   <section class="supwrap" id="pinSec">
     <h2>الكود السري و الحانوت</h2>
     <p class="note" id="pinNote" style="margin:0"></p>
@@ -1254,6 +1265,18 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <div class="kgres" id="kgRes" aria-live="polite"></div>
     <div class="actions"><button type="button" class="btn" id="kgCancel">لغي</button><button type="submit" class="btn primary" id="kgOk">زيد ل لاكيس</button></div>
   </form>
+</div>
+<div class="sheet" id="shareSheet" hidden dir="rtl" lang="ar-MA">
+  <div class="card sharecard" role="dialog" aria-modal="true" aria-labelledby="shareT">
+    <h2 id="shareT">شارك حانوت الحومة الذكي</h2>
+    <p class="note" style="margin:0">سكاني هاد الكود بالكاميرا ديال التيليفون، و التطبيق كيتحل.</p>
+    <img class="shareqr" id="shareQr" alt="QR ديال التطبيق" src="data:image/png;base64,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">
+    <div class="sharelink" id="shareLink" dir="ltr"></div>
+    <a class="btn primary" id="shareWa" target="_blank" rel="noopener">💬 صيفط الرابط ف واتساب</a>
+    <button class="btn" id="shareNative" type="button" hidden>📤 شارك</button>
+    <button class="btn" id="shareCopy" type="button">📋 نسخ الرابط</button>
+    <button class="btn" id="shareClose" type="button">سدّ</button>
+  </div>
 </div>
 <div class="sheet" id="welSheet" hidden dir="rtl" lang="ar-MA">
   <div class="card welc" role="dialog" aria-modal="true" aria-labelledby="welT">
@@ -1434,7 +1457,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       </section>
       <section class="onb-slide onb-setup" data-c="green">
         <img class="onb-toplogo" id="onbTopLogo" alt="حانوت الحومة الذكي">
-        <h2>يَالَاهْ نْبْدَاوْ</h2>
+        <h2>يالاه نبداو</h2>
         <p class="note" id="onbIntro">دخل رقم الواتساب ديال الحانوت و الكود السري.<br>إلا كنتي جديد، كنكمّلو المعلومات من بعد.</p>
         <form id="onbForm" class="onb-form">
           <div class="field"><label for="shopPhone"><span class="stepn">1</span>رقم الواتساب</label><input id="shopPhone" enterkeyhint="next" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="06 12 34 56 78" required></div>
@@ -2644,6 +2667,19 @@ function showWelcome(o){
   }
 }
 $("#welClose").onclick=()=>{ $("#welSheet").hidden=true; };
+/* share the app: QR card + WhatsApp / share / copy */
+const APP_URL="https://hmissaoui1970.github.io/hanout-alhouma/";
+const shareText=()=>`السلام 👋\nجرّب حانوت الحومة الذكي: لاكيس، الكريدي، الستوك و الكوموند للموزّع ف التيليفون ديالك.\n${APP_URL}\nضغط «أنا جديد» و سجّل الحانوت ديالك.`;
+$("#shareOpen").onclick=()=>{
+  $("#shareLink").textContent=APP_URL.replace(/^https:\/\//,"").replace(/\/$/,"");
+  $("#shareWa").href=`https://wa.me/?text=${encodeURIComponent(shareText())}`;
+  $("#shareNative").hidden=!navigator.share;
+  $("#shareSheet").hidden=false;
+};
+$("#shareNative").onclick=async()=>{ try{ await navigator.share({title:"حانوت الحومة الذكي",text:shareText(),url:APP_URL}); }catch{} };
+$("#shareCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(APP_URL); toast("تنسخ الرابط ✓"); }catch{ toast(APP_URL); } };
+$("#shareClose").onclick=()=>{ $("#shareSheet").hidden=true; };
+$("#shareSheet").addEventListener("click",e=>{ if(e.target.id==="shareSheet") $("#shareSheet").hidden=true; });
 $("#welMine").addEventListener("click",()=>setTimeout(()=>toast("ف واتساب ضغط «صيفط» ✓"),300));
 const INTRO_LOGIN=$("#onbIntro").innerHTML;
 $("#onbSwitch").onclick=()=>{ const nw=setupStage!=="new"; setStage(nw?"new":"login"); setTimeout(()=>$(nw?"#ownName":"#shopPhone").focus(),60); };

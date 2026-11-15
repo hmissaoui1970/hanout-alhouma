@@ -78,6 +78,14 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     await ev(()=>{ curBasket().items=[]; saveBaskets(); });
   });
 
+  await t("share card opens with the QR and a WhatsApp link",async()=>{
+    await ev(()=>document.getElementById('shareOpen').click());
+    ok(await ev(()=>!document.getElementById('shareSheet').hidden),"share card not open");
+    ok(await ev(()=>document.getElementById('shareQr').naturalWidth>100),"QR image missing");
+    ok(await ev(()=>document.getElementById('shareWa').href.includes('hmissaoui1970.github.io')),"WhatsApp link has no app link");
+    await ev(()=>document.getElementById('shareClose').click());
+  });
+
   await t("voice text: quantity, item, price (iPhone punctuation)",async()=>{
     const r=await ev(()=>parseSpokenLines("تلاتة كوكا عشرة دراهم. و جورج فانتا، ٨ د.إ").map(l=>[l.qty,l.price]));
     ok(JSON.stringify(r)==='[[3,30],[2,16]]',"got "+JSON.stringify(r));   // totals: 3x10, 2x8
