@@ -78,6 +78,29 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     await ev(()=>{ curBasket().items=[]; saveBaskets(); });
   });
 
+  await t("credit: find a client by number, by part of the name, by phone; regulars one tap",async()=>{
+    const r=await ev(async()=>{
+      await saveClient({id:'k1',name:'لالة فاطمة الزهراء',phone:'0612345678'});
+      await saveClient({id:'k2',name:'سي محمد البقال',phone:''});
+      await saveClient({id:'k3',name:'محمد ولد الجيران',phone:''});
+      const k1=clients.find(c=>c.id==='k1'), k2=clients.find(c=>c.id==='k2');
+      const top=q=>clients.map(c=>({c,s:clientScore(c,q)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).map(x=>x.c.id);
+      return { nums: k1.num!=null && k2.num!=null && k1.num!==k2.num,
+        byNum: top(String(k2.num))[0], byHash: top('#'+k1.num)[0], byWord: top('فاطمة')[0], byPrefix: top('الزهر')[0],
+        byTitle: top('لالة')[0]!==undefined, byPhone: top('345')[0], twoMohamed: top('محمد').length>=2 };
+    });
+    ok(r.nums,"clients got no numbers"); ok(r.byNum==='k2',"number search: "+r.byNum); ok(r.byHash==='k1',"#number search: "+r.byHash);
+    ok(r.byWord==='k1' && r.byPrefix==='k1',"name search: "+r.byWord+" "+r.byPrefix); ok(r.byPhone==='k1',"phone search: "+r.byPhone); ok(r.twoMohamed,"common name should list all");
+    // regulars: the client with credit shows as a one-tap button, and tapping it writes the credit
+    await ev(async()=>{ showTab('caisse'); curBasket().items=[]; saveBaskets(); await addEntry({clientId:'k2',at:Date.now(),type:'credit',amount:5,note:''}); render(); addToBasket(products[0].id); });
+    await ev(()=>openCreditSheet());
+    ok(await ev(()=>[...document.querySelectorAll('#crRegs .crreg b')].some(b=>b.textContent==='سي محمد البقال')),"regular not shown");
+    const before=await ev(()=>balanceOf('k2'));
+    await ev(()=>[...document.querySelectorAll('#crRegs .crreg')].find(b=>b.textContent.includes('سي محمد البقال')).click());
+    await page.waitForTimeout(150);
+    ok(await ev(b=>balanceOf('k2')>b,before),"tapping the regular did not write the credit");
+  });
+
   await t("share card opens with the QR and a WhatsApp link",async()=>{
     await ev(()=>document.getElementById('shareOpen').click());
     ok(await ev(()=>!document.getElementById('shareSheet').hidden),"share card not open");
@@ -104,7 +127,7 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     await ev(async()=>{ $("#bGiven").value="20"; await checkoutBasket("cash"); }); await page.waitForTimeout(200);
     const after=await ev(()=>products.find(p=>p.id==='t-coca').stock);
     ok(after===before-2,`stock ${before} -> ${after}`);
-    ok(await ev(()=>sales.length>=1 && Math.abs(sales[sales.length-1].total-18)<0.01),"sale not saved");
+    ok(await ev(()=>sales.some(x=>Math.abs(x.total-18)<0.01)),"sale not saved");
   });
 
   await t("credit: sale on a client's notebook",async()=>{

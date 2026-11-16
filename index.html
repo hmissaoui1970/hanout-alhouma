@@ -977,6 +977,16 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 .sharecard .shareqr{width:min(72vw,300px);height:auto;margin:4px auto;border-radius:22px;background:#fff;padding:10px;box-shadow:0 0 0 4px rgba(255,79,163,.55),0 0 34px rgba(236,72,153,.45)}
 .sharecard a.btn{text-decoration:none}
 .sharecard .sharelink{font-size:14px;color:var(--muted);word-break:break-all}
+
+/* fast client picking */
+.crregs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.crregs[hidden]{display:none}
+.crreg{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:start;min-height:64px;padding:8px 10px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.crreg:active{transform:scale(.97)}
+.crreg i{grid-row:1/3;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:20px;color:#fff}
+.crreg b{font-size:16px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crreg small{font-size:13px;color:var(--muted)}
+.cnum{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);background:rgba(127,127,127,.15);border-radius:8px;padding:1px 6px;margin-inline-end:6px;direction:ltr;display:inline-block}
 </style>
 
 </head>
@@ -1097,7 +1107,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
         <input id="ncPhone" placeholder="التيليفون (ماشي ضروري)" aria-label="التيليفون" inputmode="tel">
         <button class="btn primary" type="submit">زيد كليان</button>
       </form>
-      <input class="filter" id="clientFilter" placeholder="قلّب على كليان" aria-label="قلّب على كليان">
+      <input class="filter" id="clientFilter" placeholder="قلّب بالسمية، بالنمرة (#12) ولا بالتيليفون" aria-label="قلّب على كليان">
       <ul class="clients" id="clients"></ul>
     </div>
   </section>
@@ -1344,7 +1354,8 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 <div class="sheet" id="creditSheet" hidden dir="rtl" lang="ar-MA">
   <div class="card" role="dialog" aria-modal="true" aria-labelledby="crTitle">
     <div><h2 id="crTitle" style="margin:0">على شكون الكريدي؟</h2><div class="note" id="crTotal"></div></div>
-    <div class="field"><input id="crName" placeholder="قلّب على الكليان ولا كتب سمية جديدة" autocomplete="off" aria-controls="crList"></div>
+    <div class="crregs" id="crRegs" aria-label="الكليان ديال ديما"></div>
+    <div class="field"><input id="crName" placeholder="قلّب بالسمية، بالنمرة (#12) ولا بالتيليفون" autocomplete="off" aria-controls="crList"></div>
     <ul class="citylist crlist" id="crList" role="listbox" aria-label="الكليان ديال الكارني"></ul>
     <div class="actions"><button type="button" class="btn" id="crCancel">لغي</button><button type="button" class="btn primary" id="crNew" hidden></button></div>
   </div>
@@ -1496,7 +1507,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 
 <script>
 /* ---------- crash guard: an error never freezes the shop; the data stays saved, and a report can go to WhatsApp ---------- */
-window.APP_VERSION="2026.11.15";
+window.APP_VERSION="2026.11.16";
 (function(){
   const seen={}; let shownAt=0; const log=[];
   function wa(){ try{ return String((typeof PROVIDER_WA!=="undefined"&&PROVIDER_WA)||"").replace(/\D/g,""); }catch{ return ""; } }
@@ -1555,6 +1566,7 @@ let ledger = [
 ];
 
 async function saveClient(c){
+  if(c && c.num==null){ const old=clients.find(x=>x.id===c.id); c={...c,num:(old&&old.num)||nextClientNum()}; }
   if(db && !demo){ const {id,...rest}=c; await C("clients").doc(id).set(rest); }
   else { const i=clients.findIndex(x=>x.id===c.id); i>=0?clients[i]=c:clients.push(c); render(); }
   return c;
@@ -1726,10 +1738,10 @@ $("#filter").addEventListener("input",render);
 const fmtDay = t => new Date(t).toLocaleDateString("ar-MA",{day:"numeric",month:"short"});
 let openClientId=null, delArmed=false;
 function renderCarnet(){
-  const q=norm($("#clientFilter").value);
-  const rows=clients.map(c=>({c,b:balanceOf(c.id),last:lastOf(c.id)}))
-    .filter(x=>!q||norm(x.c.name).includes(q))
-    .sort((a,b)=>(b.b>0)-(a.b>0)||b.b-a.b||a.c.name.localeCompare(b.c.name,"ar"));
+  const q=$("#clientFilter").value;
+  const rows=clients.map(c=>({c,b:balanceOf(c.id),last:lastOf(c.id),s:clientScore(c,q)}))
+    .filter(x=>x.s>0)
+    .sort((a,b)=>(q.trim()?b.s-a.s:0)||(b.b>0)-(a.b>0)||b.b-a.b||a.c.name.localeCompare(b.c.name,"ar"));
   const ul=$("#clients"); ul.innerHTML="";
   if(!clients.length) ul.innerHTML='<li class="note" style="padding:16px 4px">الكارني خاوي. زيد أول كليان لفوق، ولا قول «كتب على سي محمد جوج حليب».</li>';
   for(const {c,b,last} of rows){
@@ -1737,6 +1749,7 @@ function renderCarnet(){
     const btn=document.createElement("button"); btn.className="client"; btn.type="button";
     btn.innerHTML='<span class="cname"></span><span class="owe"></span><span class="cmeta"></span>';
     btn.querySelector(".cname").textContent=c.name;
+    const cn=document.createElement("em"); cn.className="cnum"; cn.textContent="#"+(c.num??""); btn.querySelector(".cname").prepend(cn);
     const ow=btn.querySelector(".owe");
     ow.classList.add(b>0?"due":"clear");
     ow.textContent=b>0?money(b):"خالص";
@@ -1754,7 +1767,7 @@ function renderClientSheet(){
   const c=clients.find(x=>x.id===openClientId);
   if(!c){ $("#clientSheet").hidden=true; openClientId=null; return; }
   const b=balanceOf(c.id);
-  $("#csName").textContent=c.name; $("#csPhone").textContent=c.phone||"";
+  $("#csName").textContent=c.name+(c.num!=null?`  #${c.num}`:""); $("#csPhone").textContent=c.phone||"";
   $("#csLabel").textContent=b>0?"كيتسال":b<0?"عندو عندك":"الحساب";
   $("#csOwe").textContent=b===0?"خالص":money(Math.abs(b));
   $("#csOwe").style.color=b>0?"var(--low)":"var(--paid)";
@@ -2399,8 +2412,10 @@ $("#bCredit").onclick=()=>checkoutBasket("credit");
    One tap on a name writes the credit; a new name can be added from here too. */
 function openCreditSheet(){
   $("#crTotal").textContent="المجموع: "+money(basketTotal(curBasket()));
-  $("#crName").value=""; renderCreditList();
-  $("#creditSheet").hidden=false; setTimeout(()=>$("#crName").focus(),60);
+  $("#crName").value=""; renderCreditRegs(); renderCreditList();
+  $("#creditSheet").hidden=false;
+  // on a phone the keyboard would hide the list: only focus the search where there is a real keyboard
+  if(window.matchMedia("(pointer:fine)").matches) setTimeout(()=>$("#crName").focus(),60);
 }
 function closeCreditSheet(){ $("#creditSheet").hidden=true; }
 function creditTo(name){
@@ -2409,12 +2424,26 @@ function creditTo(name){
   $("#bClient").value=name; const b=curBasket(); b.client=name; saveBaskets();
   checkoutBasket("credit");
 }
+function renderCreditRegs(){
+  const box=$("#crRegs"); box.innerHTML=""; const regs=regularClients(8);
+  box.hidden=!regs.length;
+  for(const c of regs){
+    const bt=document.createElement("button"); bt.type="button"; bt.className="crreg";
+    const av=document.createElement("i"); av.textContent=((c.name.split(" ").find(w=>w&&!CLIENT_TITLES.test(w))||c.name).replace(/^ال(?=..)/,"")[0]||"?"); av.style.background=`hsl(${avatarHue(c.name)} 65% 45%)`;
+    const nm=document.createElement("b"); nm.textContent=c.name;
+    const o=balanceOf(c.id), sm=document.createElement("small"); sm.textContent=o>0?money(o):"خالص";
+    bt.append(av,nm,sm); bt.addEventListener("click",()=>creditTo(c.name)); box.append(bt);
+  }
+}
 function renderCreditList(){
-  const q=pickKey($("#crName").value), ul=$("#crList"); ul.innerHTML="";
-  const all=clients.map(c=>({c,o:balanceOf(c.id)})).sort((a,b)=>(b.o>0)-(a.o>0) || a.c.name.localeCompare(b.c.name,"ar"));
-  const hits=!q?all:all.filter(x=>pickKey(x.c.name).includes(q));
+  const raw=$("#crName").value, ul=$("#crList"); ul.innerHTML="";
+  $("#crRegs").hidden = !!raw.trim() || !$("#crRegs").children.length;
+  const all=clients.map(c=>({c,o:balanceOf(c.id),s:clientScore(c,raw)})).filter(x=>x.s>0)
+    .sort((a,b)=>b.s-a.s || (b.o>0)-(a.o>0) || a.c.name.localeCompare(b.c.name,"ar"));
+  const hits=all;
   for(const x of hits){
     const li=document.createElement("li"); li.setAttribute("role","option");
+    const nb=document.createElement("em"); nb.className="cnum"; nb.textContent="#"+(x.c.num??""); li.append(nb);
     const b=document.createElement("b"); b.textContent=x.c.name; li.append(b);
     if(x.o>0){ const s=document.createElement("span"); s.textContent="كيتسال "+money(x.o); li.append(s); }
     li.addEventListener("click",()=>creditTo(x.c.name)); ul.append(li);
@@ -2422,13 +2451,15 @@ function renderCreditList(){
   if(!hits.length){ const li=document.createElement("li"); li.className="none";
     li.textContent = clients.length ? "ما لقيتش هاد السمية ف الكارني." : "الكارني خاوي. كتب سمية الكليان و زيدو."; ul.append(li); }
   // a typed name that isn't in the notebook (strict match) can be added right here
-  const typed=$("#crName").value.trim(), isNew=typed && !findClient(typed);
+  const typed=$("#crName").value.trim(), isNew=typed && !/^[#\d\s٠-٩]+$/.test(typed) && !findClient(typed);
   $("#crNew").hidden=!isNew; if(isNew) $("#crNew").textContent=`+ زيد «${typed}» و كتب عليه`;
 }
 $("#crName").addEventListener("input",renderCreditList);
+const all1=()=>{ const raw=$("#crName").value; const l=clients.map(c=>({c,s:clientScore(c,raw)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s); return l[0]; };
 $("#crName").addEventListener("keydown",e=>{
   if(e.key==="Enter"){ e.preventDefault(); const opts=$("#crList").querySelectorAll("li[role=option]");
-    if(opts.length===1) opts[0].click(); else if(!$("#crNew").hidden) $("#crNew").click(); }
+    const top=all1();
+    if(opts.length===1 || (top && top.s>=100)) opts[0].click(); else if(!$("#crNew").hidden) $("#crNew").click(); }
   else if(e.key==="Escape"){ e.stopPropagation(); closeCreditSheet(); }
 });
 $("#crNew").onclick=()=>creditTo($("#crName").value);
@@ -4102,6 +4133,36 @@ const CATALOG={
 };
 const CAT_NAMES=Object.keys(CATALOG);
 const CAT_ITEMS=CAT_NAMES.flatMap(c=>CATALOG[c].split("|").map(n=>({v:n,cat:c})));
+/* find a client fast: by number (#12 or 12), by phone digits, or by the start of any word of the name (titles like سي / لالة ignored) */
+const isTitle=w=>CLIENT_TITLES.test(w)||CLIENT_TITLES.test(w.replace(/ه$/,"ة"));
+function clientScore(c,raw){
+  const q=String(raw||"").trim(); if(!q) return 1;
+  const dg=toLatinDigits(q).replace(/[#\s]/g,"");
+  if(/^\d+$/.test(dg)){
+    if(String(c.num)===dg) return 100;
+    if(String(c.num||"").startsWith(dg)) return 60;
+    if(dg.length>=3 && String(c.phone||"").replace(/\D/g,"").includes(dg)) return 50;
+    return 0;
+  }
+  const words=pickKey(c.name).split(" ").filter(w=>w && !isTitle(w));
+  const want=pickKey(q).split(" ").filter(w=>w && !isTitle(w)); if(!want.length) return 1;
+  let score=0;
+  for(const w of want){
+    const strip=x=>x.replace(/^ال/,"");
+    if(words.some(x=>x===w||strip(x)===strip(w))) score+=40;
+    else if(words.some(x=>x.startsWith(w)||strip(x).startsWith(strip(w)))) score+=25;
+    else if(pickKey(c.name).includes(w)) score+=10;
+    else return 0;
+  }
+  return score;
+}
+/* the clients who used the notebook most lately: one tap at the till */
+function regularClients(n=8){
+  const now=Date.now(), score={};
+  for(const l of ledger){ const age=(now-l.at)/864e5; if(age>60) continue; score[l.clientId]=(score[l.clientId]||0)+1+Math.max(0,(60-age)/60); }
+  return clients.filter(c=>score[c.id]).sort((a,b)=>score[b.id]-score[a.id]).slice(0,n);
+}
+const avatarHue=s=>{ let h=0; for(const ch of String(s)) h=(h*31+ch.charCodeAt(0))%360; return h; };
 const pickKey=s=>norm(s).replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/\s+/g," ").trim();
 /* one small list under a field: filters as you type, tap or ↑↓/Enter to pick */
 function makePicker({input,list,items,group,onPick,emptyText}){
@@ -4318,9 +4379,17 @@ async function storageNote(force){
 function applyData(d){
   products=d.products||[]; sales=d.sales||[]; clients=d.clients||[]; ledger=d.ledger||[];
   suppliers=d.suppliers||[]; orders=d.orders||[]; sledger=d.sledger||[];
+  numberClients();
+}
+/* every client gets a short number (#1, #2…) the owner can type instead of the name */
+function nextClientNum(){ return clients.reduce((m,c)=>Math.max(m,+c.num||0),0)+1; }
+function numberClients(){
+  const first=id=>{ let t=Infinity; for(const l of ledger) if(l.clientId===id && l.at<t) t=l.at; return t; };
+  clients.filter(c=>c.num==null).sort((a,b)=>first(a.id)-first(b.id)||a.name.localeCompare(b.name,"ar"))
+    .forEach(c=>{ c.num=nextClientNum(); });
 }
 const _render=render;
-render=function(){ _render(); persist(); };
+render=function(){ if(clients.some(c=>c.num==null)) numberClients(); _render(); persist(); };
 /* ---------- monthly subscription: a code sent on WhatsApp ----------
    code = 4 digits for the last paid day + 6 check digits tied to the shop's WhatsApp number.
    Made with subscription-codes.html (same SUB_SECRET). After the last paid day: 30 days of notice, then the app stops.
