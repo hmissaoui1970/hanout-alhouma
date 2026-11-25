@@ -233,6 +233,26 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     ok(await page.$eval('#lock',e=>e.hidden),"code did not unlock");
   });
 
+  await t("forgot code: number + recovery key, rescue code, wrong-try wait",async()=>{
+    const key=await ev(async()=>{ openKeySheet(); const k=document.getElementById('ksKey').textContent; document.getElementById('ksDone').disabled=false; await document.getElementById('ksDone').onclick(); return k; });
+    ok(/^\d{4}-\d{4}$/.test(key) && await ev(()=>!!owner.rkey && !JSON.stringify(owner).includes(document.getElementById('ksKey').textContent)),"key not made or stored in clear");
+    const phone=await ev(()=>owner.phone);
+    const tryReset=async(ph,k,rescue)=>ev(async([ph,k,rescue])=>{ showLock("unlock"); document.getElementById('lockForgot').click();
+      document.getElementById('lockPhone').value=ph;
+      if(rescue){ document.getElementById('lockNoWord').click(); document.getElementById('lockRescue').value=rescue; } else document.getElementById('lockWord').value=k;
+      document.getElementById('lockReset').dispatchEvent(new Event('submit',{cancelable:true})); await new Promise(r=>setTimeout(r,150));
+      return {mode:lockMode, err:document.getElementById('lockResetErr').textContent}; },[ph,k,rescue]);
+    let r=await tryReset(phone,'0000-0000'); ok(r.mode!=="new1" && /غالط/.test(r.err),"wrong key accepted: "+JSON.stringify(r));
+    r=await tryReset('0699999999',key); ok(r.mode!=="new1","wrong number accepted");
+    r=await tryReset(phone,key); ok(r.mode==="new1","right number + key refused: "+r.err);
+    const code=await ev(()=>subMac(waNumber(owner.phone),"R"+subDay(Date.now())));
+    r=await tryReset(phone,'',code); ok(r.mode==="new1","rescue code refused: "+r.err);
+    r=await tryReset(phone,'','111111'); ok(r.mode!=="new1","bad rescue code accepted");
+    for(let i=0;i<5;i++) r=await tryReset(phone,'1111-1111');
+    r=await tryReset(phone,key); ok(r.mode!=="new1" && /بزاف/.test(r.err),"no wait after 5 wrong tries: "+r.err);
+    await ev(async()=>{ localStorage.removeItem(bkKey("resetguard")); setPin(await pinHash("1234")); hideLock(); });
+  });
+
   await t("data survives a reload",async()=>{
     await page.waitForTimeout(600); await fresh();
     for(const k of "1234") await page.keyboard.press(k); await page.waitForTimeout(700);

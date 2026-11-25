@@ -1002,6 +1002,16 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 
 .phonelim{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--muted);font-weight:600;margin:2px 0 8px}
 .phonelim select{font:inherit;font-size:15px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+
+.lock-reset [hidden]{display:none!important}
+.lock-reset .lock-small{background:none;border:0;color:#ff8cc6;font:inherit;font-size:.95rem;cursor:pointer;padding:4px;justify-self:center}
+#lock .lock-reset a.btn{text-decoration:none;text-align:center;background:#25d366!important;border-color:#25d366!important;color:#05301a!important;font-weight:800}
+
+.keycard{display:grid;gap:12px;text-align:center}
+.keycard .keybig{font:800 44px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:4px;color:#ffd23f;padding:10px;border-radius:18px;background:rgba(255,210,63,.08);border:2px dashed rgba(255,210,63,.5)}
+.keycard a.btn{text-decoration:none}
+.keycard .lock-small{background:none;border:0;color:var(--muted);font:inherit;cursor:pointer}
+.lockbio{margin-top:10px;background:rgba(255,79,163,.15)!important;border:1.5px solid #ff4fa3!important;color:#fff!important;font-weight:800}
 </style>
 
 </head>
@@ -1217,6 +1227,8 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <div class="actions" style="justify-content:flex-start">
       <button class="btn primary" id="pinSet" type="button">دير كود سري</button>
       <button class="btn" id="pinOff" type="button" hidden>حيّد الكود</button>
+      <button class="btn" id="bioSet" type="button" hidden>👆 البصمة / Face ID</button>
+      <button class="btn" id="wordSet" type="button">🔑 مفتاح الإنقاذ</button>
       <button class="btn" id="shopSwitchBtn" type="button" hidden>بدّل الحانوت</button>
       <button class="btn" id="exitBtn2" type="button">🚪 خروج</button>
     </div>
@@ -1246,11 +1258,18 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <div class="lock-keys" id="lockKeys"></div>
     </div>
     <form class="lock-reset" id="lockReset" hidden>
-      <label for="lockPhone">كتب رقم الواتساب ديال الحانوت</label>
+      <label for="lockPhone">رقم الواتساب ديال الحانوت</label>
       <input id="lockPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="06 12 34 56 78">
+      <div id="lockWordBox"><label for="lockWord">مفتاح الإنقاذ (8 أرقام، لقاه ف الواتساب ديالك)</label>
+      <input id="lockWord" inputmode="numeric" autocomplete="off" placeholder="1234-5678" dir="ltr"></div>
+      <div id="lockRescueBox" hidden><label for="lockRescue">كود الإنقاذ (من حانوت الحومة الذكي)</label>
+      <input id="lockRescue" inputmode="numeric" autocomplete="off" placeholder="123456" dir="ltr"></div>
       <div class="lock-err" id="lockResetErr" role="alert"></div>
-      <button class="btn primary" type="submit">حيّد الكود</button>
+      <button class="btn primary" type="submit">كمّل و ختار كود جديد</button>
+      <button class="lock-small" type="button" id="lockNoWord">ما لقيتيش مفتاح الإنقاذ؟</button>
+      <a class="btn" id="lockAskUs" target="_blank" rel="noopener" hidden>💬 طلب كود الإنقاذ ف واتساب</a>
     </form>
+    <button class="btn lockbio" type="button" id="lockBio" hidden>👆 دخول بالبصمة / Face ID</button>
     <div class="lock-links">
       <button type="button" id="lockForgot">نسيتي الكود؟</button>
       <button type="button" id="lockBack" hidden>رجع للكود</button>
@@ -1318,6 +1337,16 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <div class="field"><input id="paIn" inputmode="tel" placeholder="06 12 34 56 78" aria-label="رقم الواتساب ديال الكليان" dir="ltr"></div>
     <div class="note" id="paErr" role="alert"></div>
     <div class="actions"><button type="button" class="btn" id="paCancel">لغي</button><button type="button" class="btn primary" id="paSave">حفظ و كمّل</button></div>
+  </div>
+</div>
+<div class="sheet" id="keySheet" hidden dir="rtl" lang="ar-MA">
+  <div class="card keycard" role="dialog" aria-modal="true" aria-labelledby="ksT">
+    <h2 id="ksT" style="margin:0">🔑 مفتاح الإنقاذ ديالك</h2>
+    <p class="note" style="margin:0">إلا نسيتي الكود ديال 4 أرقام، بهاد المفتاح تقدر تختار كود جديد. صيفطو دابا ل الواتساب ديالك و خلّيه تمّا. ما تعطيه لحتى واحد.</p>
+    <div class="keybig" id="ksKey" dir="ltr"></div>
+    <a class="btn primary" id="ksSend" target="_blank" rel="noopener">📲 صيفطو ل الواتساب ديالي</a>
+    <button type="button" class="btn" id="ksDone" disabled>✓ صيفطتو، كمّل</button>
+    <button type="button" class="lock-small" id="ksLater">من بعد</button>
   </div>
 </div>
 <div class="sheet" id="welSheet" hidden dir="rtl" lang="ar-MA">
@@ -2769,7 +2798,7 @@ function showWelcome(o){
     welcomeAuto(o).then(ok=>{ note.textContent= ok ? "✓ صيفطنا ليك رسالة الترحيب ف الواتساب ديالك." : "ما كاينش الأنترنيت دابا. رسالة الترحيب غادي توصلك ملي يرجع الأنترنيت."; });
   }
 }
-$("#welClose").onclick=()=>{ $("#welSheet").hidden=true; };
+$("#welClose").onclick=()=>{ $("#welSheet").hidden=true; setTimeout(maybeAskKey,400); };
 /* share the app: QR card + WhatsApp / share / copy */
 const APP_URL="https://hmissaoui1970.github.io/hanout-alhouma/";
 const shareText=()=>`السلام 👋\nجرّب حانوت الحومة الذكي: لاكيس، الكريدي، الستوك و الكوموند للموزّع ف التيليفون ديالك.\n${APP_URL}\nضغط «أنا جديد» و سجّل الحانوت ديالك.`;
@@ -2909,6 +2938,8 @@ function showLock(mode,after,forced){
   $("#lockCancel").hidden=lockMode==="unlock"||lockForced;
   $("#lockSwitch").hidden=!(lockMode==="unlock" && canSwitch());
   $("#lockWho").hidden=lockMode!=="unlock";
+  if($("#lockBio")) $("#lockBio").textContent="👆 دخول بالبصمة / Face ID";
+  if(typeof paintBio==="function") paintBio();
   paintDots(); $("#lock").hidden=false; document.body.classList.add("locked");
 }
 function hideLock(){ $("#lock").hidden=true; document.body.classList.remove("locked"); lockAfter=null; }
@@ -2928,13 +2959,13 @@ async function pressKey(v){
   if(lockMode==="unlock"||lockMode==="check"){
     if(await pinOk(code)){
       lockFails=0; const a=lockAfter;
-      if(a){ lockAfter=null; lockBusy=false; a(); } else hideLock();
+      if(a){ lockAfter=null; lockBusy=false; a(); } else { hideLock(); if(lockMode==="unlock") setTimeout(maybeAskKey,500); }
     } else { lockFails++; lockShake(lockFails>=3?"الكود غالط. إلا نسيتيه، ضغط «نسيتي الكود؟» لتحت.":"الكود غالط، عاود."); }
   } else if(lockMode==="new1"){
     lockFirst=code; setTimeout(()=>{ lockMode="new2"; lockBuf=""; $("#lockT").textContent=LOCK_TITLES.new2; paintDots(); lockBusy=false; },220);
   } else if(lockMode==="new2"){
     if(code!==lockFirst){ lockMode="new1"; $("#lockT").textContent=LOCK_TITLES.new1; lockShake("الكودين ماشي بحال بحال. عاود من الأول."); return; }
-    setPin(await pinHash(code)); hideLock(); if(exitAfterPin){ exitAfterPin=false; showLock("unlock"); toast("تحط الكود السري ✓ خرجتي من الحانوت."); return; } toast("تحط الكود السري ✓ التطبيق غادي يطلبو ملي تحلّو.");
+    setPin(await pinHash(code)); hideLock(); if(keyAfterPin){ keyAfterPin=false; setTimeout(openKeySheet,300); } if(exitAfterPin){ exitAfterPin=false; showLock("unlock"); toast("تحط الكود السري ✓ خرجتي من الحانوت."); return; } toast("تحط الكود السري ✓ التطبيق غادي يطلبو ملي تحلّو.");
   }
 }
 document.addEventListener("keydown",e=>{
@@ -2944,15 +2975,117 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="Escape" && lockMode!=="unlock" && !lockForced){ hideLock(); }
 });
 $("#lockCancel").onclick=()=>{ exitAfterPin=false; hideLock(); };
+$("#lockForgot").addEventListener("click",()=>{ paintResetForm(); if(bioCan&&owner&&owner.bio){ $("#lockBio").hidden=false; $("#lockBio").textContent="👆 بدّل الكود بالبصمة / Face ID"; lockAfter=()=>{ setPin(null); showLock("new1",null,true); $("#lockErr").textContent="مزيان ✓ دابا ختار كود جديد."; }; } });
 $("#lockForgot").onclick=()=>{ $("#lockWho").hidden=true; $("#lockPad").hidden=true; $("#lockForgot").hidden=true; $("#lockSwitch").hidden=true; $("#lockBack").hidden=false; $("#lockReset").hidden=false; $("#lockT").textContent="باش تحيّد الكود"; $("#lockResetErr").textContent=""; $("#lockPhone").value=""; $("#lockPhone").focus(); };
 $("#lockBack").onclick=()=>showLock(lockMode,lockAfter);
-$("#lockReset").addEventListener("submit",e=>{
+/* forgot the code: fingerprint / Face ID, or the shop's number + the recovery key (sent to the owner's WhatsApp),
+   or, last resort, a rescue code from Hanout Alhouma valid for this shop and this day only */
+const keyNorm=k=>toLatinDigits(String(k||"")).replace(/\D/g,"");
+async function keyHash(k){ return pinHash("rkey:"+keyNorm(k)); }
+function newRecoveryKey(){ const a=new Uint32Array(2); crypto.getRandomValues(a); return String(a[0]%10000).padStart(4,"0")+"-"+String(a[1]%10000).padStart(4,"0"); }
+function rescueOk(code){
+  const wa=owner&&waNumber(owner.phone); if(!wa) return false;
+  const c=keyNorm(code); if(c.length!==6) return false;
+  const d=subDay(Date.now()); return [d,d-1].some(x=>subMac(wa,"R"+x)===c);
+}
+/* wrong tries: 5 → wait 15 min, 5 more → 1 hour, then 24 hours */
+const RESET_WAITS=[15*60e3,60*60e3,24*3600e3];
+function resetState(){ try{ return JSON.parse(localStorage.getItem(bkKey("resetguard"))||"{}")||{}; }catch{ return {}; } }
+function saveResetState(o){ try{ localStorage.setItem(bkKey("resetguard"),JSON.stringify(o)); }catch{} }
+function paintResetForm(){
+  const hasKey=!!(owner&&owner.rkey);
+  $("#lockWordBox").hidden=!hasKey; $("#lockRescueBox").hidden=true; $("#lockNoWord").hidden=!hasKey; $("#lockAskUs").hidden=true;
+  $("#lockWord").value=""; $("#lockRescue").value=""; $("#lockResetErr").textContent="";
+}
+$("#lockNoWord").onclick=()=>{
+  $("#lockWordBox").hidden=true; $("#lockRescueBox").hidden=false; $("#lockNoWord").hidden=true;
+  const msg=`سلام، نسيت الكود و ما لقيتش مفتاح الإنقاذ ديال الحانوت.\nالحانوت: ${owner&&owner.shop||""}\nالواتساب: +${owner?waNumber(owner.phone):""}\nعافاك صيفط ليا كود الإنقاذ.`;
+  $("#lockAskUs").href=`https://wa.me/${waNumber(PROVIDER_WA)}?text=${encodeURIComponent(msg)}`; $("#lockAskUs").hidden=false;
+};
+$("#lockReset").addEventListener("submit",async e=>{
   e.preventDefault();
+  const st=resetState();
+  if(st.until && Date.now()<st.until){ const m=Math.ceil((st.until-Date.now())/60e3); $("#lockResetErr").textContent=`بزاف ديال المحاولات الغالطة. عاود من بعد ${m>=60?Math.ceil(m/60)+" ساعة":m+" دقيقة"}.`; return; }
   const v=$("#lockPhone").value.trim();
-  if(owner && validWa(v) && waNumber(v)===waNumber(owner.phone)){
-    setPin(null); lockFails=0; showLock("new1",null,true); $("#lockErr").textContent="مزيان ✓ دابا ختار كود جديد.";
-  } else $("#lockResetErr").textContent="هاد الرقم ماشي ديال هاد الحانوت.";
+  const phoneOk = owner && validWa(v) && waNumber(v)===waNumber(owner.phone);
+  let ok=false;
+  if(phoneOk){
+    if(!$("#lockRescueBox").hidden) ok=rescueOk($("#lockRescue").value);
+    else if(owner.rkey) ok=(await keyHash($("#lockWord").value))===owner.rkey;
+    else ok=true;                                   // shops from before the recovery key: the number, then a key is made right after
+  }
+  if(!ok){
+    st.fails=(st.fails||0)+1;
+    if(st.fails>=5){ st.level=Math.min((st.level||0),RESET_WAITS.length-1); st.until=Date.now()+RESET_WAITS[st.level]; st.level++; st.fails=0; }
+    saveResetState(st);
+    $("#lockResetErr").textContent = !phoneOk ? "هاد الرقم ماشي ديال هاد الحانوت." : !$("#lockRescueBox").hidden ? "كود الإنقاذ ماشي صحيح ولا سالا الوقت ديالو." : "مفتاح الإنقاذ غالط.";
+    return;
+  }
+  saveResetState({});
+  setPin(null); lockFails=0; keyAfterPin=!owner.rkey; showLock("new1",null,true); $("#lockErr").textContent="مزيان ✓ دابا ختار كود جديد.";
 });
+/* the recovery key: made once, shown once, sent to the owner's own WhatsApp; only its fingerprint is kept */
+var keyAfterPin=false, pendingKey="";
+function openKeySheet(){
+  pendingKey=newRecoveryKey(); $("#ksKey").textContent=pendingKey; $("#ksDone").disabled=true;
+  const msg=`🔑 مفتاح الإنقاذ ديال ${owner&&owner.shop||"الحانوت"} (حانوت الحومة الذكي):\n${pendingKey}\n\nإلا نسيتي الكود السري: «نسيتي الكود؟» ← رقم الواتساب + هاد المفتاح.\nما تعطيه لحتى واحد.`;
+  $("#ksSend").href=`https://wa.me/${owner?waNumber(owner.phone):""}?text=${encodeURIComponent(msg)}`;
+  $("#keySheet").hidden=false;
+}
+$("#ksSend").addEventListener("click",()=>{ setTimeout(()=>{ $("#ksDone").disabled=false; },800); });
+$("#ksDone").onclick=async()=>{
+  if(!pendingKey) return;
+  owner.rkey=await keyHash(pendingKey); pendingKey="";
+  try{ localStorage.setItem(OWNER_KEY,JSON.stringify(owner)); }catch{} if(typeof rememberShop==="function") rememberShop(owner);
+  $("#keySheet").hidden=true; paintPinCard(); toast("تسجّل مفتاح الإنقاذ ✓ خلّيه ف الواتساب ديالك.");
+};
+$("#ksLater").onclick=()=>{ pendingKey=""; try{ localStorage.setItem(bkKey("keylater"),String(Date.now()+864e5)); }catch{} $("#keySheet").hidden=true; };
+function maybeAskKey(){
+  if(!owner||!owner.pin||owner.rkey) return;
+  let later=0; try{ later=+localStorage.getItem(bkKey("keylater"))||0; }catch{} if(Date.now()<later) return;
+  if(!$("#lock").hidden||!$("#onb").hidden||!$("#welSheet").hidden) return;
+  openKeySheet();
+}
+$("#wordSet").onclick=()=>{ if(!owner) return; if(owner.pin) showLock("check",()=>{ hideLock(); openKeySheet(); }); else openKeySheet(); };
+
+/* fingerprint / Face ID (WebAuthn on this phone): opens the shop, and lets the owner pick a new code if he forgot it */
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((s.length+3)%4)),c=>c.charCodeAt(0));
+var bioCan=false;
+(async()=>{ try{ bioCan=!!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }catch{} paintPinCard(); paintBio(); })();
+function paintBio(){ const on=bioCan && owner && owner.bio; if($("#lockBio")) $("#lockBio").hidden=!(on && (lockMode==="unlock"||lockMode==="check")); }
+async function bioCheck(){
+  if(!owner||!owner.bio) return false;
+  try{
+    const ch=crypto.getRandomValues(new Uint8Array(32));
+    const a=await navigator.credentials.get({publicKey:{challenge:ch,allowCredentials:[{type:"public-key",id:unb64u(owner.bio)}],userVerification:"required",timeout:60000}});
+    if(!a) return false;
+    const flags=new Uint8Array(a.response.authenticatorData)[32];
+    return !!(flags & 0x04) && b64u(a.rawId)===owner.bio;        // the phone checked the finger / face
+  }catch{ return false; }
+}
+$("#lockBio").onclick=async()=>{
+  if(!(await bioCheck())){ $("#lockErr").textContent="ما تقبلاتش البصمة. دخل الكود."; return; }
+  lockFails=0; const after=lockAfter; lockAfter=null;
+  if(after) after(); else { hideLock(); if(lockMode==="unlock") setTimeout(maybeAskKey,500); }
+};
+$("#bioSet").onclick=async()=>{
+  if(!owner||!bioCan) return;
+  const turnOn=async()=>{
+    try{
+      const ch=crypto.getRandomValues(new Uint8Array(32)), uid=crypto.getRandomValues(new Uint8Array(16));
+      const c=await navigator.credentials.create({publicKey:{challenge:ch,rp:{name:"Hanout Alhouma Dakye"},
+        user:{id:uid,name:(owner.shop||"hanout"),displayName:(owner.name||owner.shop||"hanout")},
+        pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+        authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},timeout:60000}});
+      if(!c) return;
+      owner.bio=b64u(c.rawId); try{ localStorage.setItem(OWNER_KEY,JSON.stringify(owner)); }catch{} if(typeof rememberShop==="function") rememberShop(owner);
+      hideLock(); paintPinCard(); toast("✓ دابا تقدر تحل الحانوت بالبصمة / Face ID.");
+    }catch{ hideLock(); toast("ما تفعّلاتش البصمة."); }
+  };
+  if(owner.bio){ owner.bio=null; try{ localStorage.setItem(OWNER_KEY,JSON.stringify(owner)); }catch{} paintPinCard(); toast("تحيّدات البصمة."); return; }
+  if(owner.pin) showLock("check",turnOn); else turnOn();
+};
 $("#lockSwitch").onclick=()=>openShopPick(true);
 /* «خروج»: the shop closes and the code screen comes back (with «عندي حساب» / «أنا جديد») */
 let exitAfterPin=false;
@@ -2988,6 +3121,8 @@ function paintPinCard(){
     ? "الحانوت ديالك محمي بكود سري ديال 4 أرقام، كيطلبو التطبيق ملي تحلّو."
     : "ختار كود سري ديال 4 أرقام باش حتى واحد ما يشوف البيع و الكريدي ديالك.";
   $("#pinSet").textContent = has ? "بدّل الكود" : "دير كود سري";
+  if($("#wordSet")) $("#wordSet").textContent = owner&&owner.rkey ? "🔑 مفتاح إنقاذ جديد" : "🔑 دير مفتاح الإنقاذ";
+  if($("#bioSet")){ $("#bioSet").hidden=!(typeof bioCan!=="undefined"&&bioCan); $("#bioSet").textContent = owner&&owner.bio ? "👆 حيّد البصمة" : "👆 حل بالبصمة / Face ID"; }
   $("#pinOff").hidden=true;
   $("#shopSwitchBtn").hidden = typeof shopsList!=="function";
 }
