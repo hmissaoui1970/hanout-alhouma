@@ -4645,11 +4645,17 @@ setInterval(subCheck,60e3);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") subCheck(); });
 
 
+/* the backup file says which shop it is: hanout-backup-<shop>-<last 4 digits>-<date>.json */
+function backupName(){
+  const shop=String((owner&&owner.shop)||"").trim().replace(/[\\/:*?"<>|\s]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"").slice(0,30);
+  const tail=String((owner&&owner.phone)||"").replace(/\D/g,"").slice(-4);
+  return ["hanout-backup",shop,tail,new Date().toISOString().slice(0,10)].filter(Boolean).join("-")+".json";
+}
 /* backup: download / restore a file */
 $("#backupDl").onclick=()=>{
   const blob=new Blob([JSON.stringify({v:1,products,sales,clients,ledger,suppliers,orders,sledger,owner,savedAt:Date.now()})],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=`hanout-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download=backupName();
   document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   try{ localStorage.setItem(KEY+"-lastbackup",String(Date.now())); }catch{}
   backupNote(); toast("تحمّلات النسخة. خبّيها ف شي بلاصة مزيانة (واتساب، إيميل، Drive).");
@@ -4687,7 +4693,7 @@ function backupNote(){
 /* ---------- weekly backup, one tap: the file goes to WhatsApp (or wherever the owner picks) ---------- */
 function backupFile(){
   const data=JSON.stringify({v:1,products,sales,clients,ledger,suppliers,orders,sledger,owner,savedAt:Date.now()});
-  return new File([data],`hanout-backup-${new Date().toISOString().slice(0,10)}.json`,{type:"application/json"});
+  return new File([data],backupName(),{type:"application/json"});
 }
 function backupDue(){
   if(!owner||!ownerComplete()||!(products.length||sales.length||clients.length)) return false;
