@@ -101,6 +101,27 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     ok(await ev(b=>balanceOf('k2')>b,before),"tapping the regular did not write the credit");
   });
 
+  await t("client page: send the account to the client on WhatsApp",async()=>{
+    const r=await ev(async()=>{
+      await saveClient({id:'st1',name:'سي رشيد',phone:''});
+      const t0=Date.now()-5*864e5;
+      await addEntry({clientId:'st1',at:t0,type:'credit',amount:40,note:'زيت'});
+      await addEntry({clientId:'st1',at:t0+864e5,type:'payment',amount:40,note:''});      // account back to zero
+      await addEntry({clientId:'st1',at:t0+2*864e5,type:'credit',amount:25,note:'سكر'});
+      await addEntry({clientId:'st1',at:t0+3*864e5,type:'payment',amount:10,note:''});
+      render(); openClient('st1');
+      const txt=clientStatement(clients.find(c=>c.id==='st1'));
+      const noPhone={row:!document.getElementById('csPhoneRow').hidden, href:document.getElementById('csSend').href};
+      document.getElementById('csPhoneIn').value='0661234567'; await document.getElementById('csPhoneSave').onclick(); 
+      return {txt,noPhone,href:document.getElementById('csSend').href,row:!document.getElementById('csPhoneRow').hidden};
+    });
+    ok(r.txt.includes('25.00') && r.txt.includes('10.00') && r.txt.includes('15.00'),"statement amounts: "+r.txt);
+    ok(!r.txt.includes('40.00'),"settled movements should not be listed");
+    ok(r.noPhone.row && r.noPhone.href.startsWith('https://wa.me/?text='),"no phone: should ask for it and still allow sending");
+    ok(r.href.startsWith('https://wa.me/212661234567?text=') && !r.row,"with phone: "+r.href.slice(0,40));
+    await ev(()=>document.getElementById('btnCloseClient').click());
+  });
+
   await t("share card opens with the QR and a WhatsApp link",async()=>{
     await ev(()=>document.getElementById('shareOpen').click());
     ok(await ev(()=>!document.getElementById('shareSheet').hidden),"share card not open");

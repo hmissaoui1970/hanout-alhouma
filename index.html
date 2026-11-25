@@ -991,6 +991,12 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 .bkplan{display:flex;flex-wrap:wrap;gap:10px 16px}
 .bkplan label{display:grid;gap:4px;font-size:14px;color:var(--muted);font-weight:600}
 .bkplan select{font:inherit;font-size:16px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:140px}
+
+.cssend{display:grid;gap:8px;margin:6px 0 2px}
+#clientSheet .cssend a.btn.wa{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:16px;background:#25d366!important;border-color:#25d366!important;color:#05301a!important;font-weight:800;text-decoration:none;box-shadow:0 8px 22px -8px rgba(37,211,102,.7)}
+.csphone{display:flex;gap:8px}
+.csphone[hidden]{display:none}
+.csphone input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 </style>
 
 </head>
@@ -1384,6 +1390,13 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <button class="btn owe-btn" id="btnCredit">كتب عليه</button>
       <button class="btn pay" id="btnPay">خلّص</button>
       <button class="btn" id="btnPayAll">خلّص كولشي</button>
+    </div>
+    <div class="cssend">
+      <a class="btn wa" id="csSend" target="_blank" rel="noopener">💬 صيفط الحساب ل الكليان</a>
+      <div class="csphone" id="csPhoneRow" hidden>
+        <input id="csPhoneIn" inputmode="tel" placeholder="رقم الواتساب ديال الكليان" aria-label="رقم الواتساب ديال الكليان" dir="ltr">
+        <button class="btn" type="button" id="csPhoneSave">حفظ الرقم</button>
+      </div>
     </div>
     <ul class="history" id="csHistory"></ul>
     <div class="actions">
@@ -1781,6 +1794,7 @@ function renderClientSheet(){
   $("#csLabel").textContent=b>0?"كيتسال":b<0?"عندو عندك":"الحساب";
   $("#csOwe").textContent=b===0?"خالص":money(Math.abs(b));
   $("#csOwe").style.color=b>0?"var(--low)":"var(--paid)";
+  paintClientSend(c);
   const h=$("#csHistory"); h.innerHTML="";
   const entries=ledger.filter(l=>l.clientId===c.id).sort((a,b)=>b.at-a.at);
   if(!entries.length) h.innerHTML='<li class="note" style="padding:8px 0">ما كاين حتى حركة فهاد الصفحة.</li>';
@@ -1793,6 +1807,35 @@ function renderClientSheet(){
     h.append(li);
   }
 }
+/* the client's account as a WhatsApp message: movements since the account was last at zero, and what is left */
+function clientStatement(c){
+  const all=ledger.filter(l=>l.clientId===c.id).sort((a,b)=>a.at-b.at);
+  let run=0, from=0;
+  all.forEach((e,i)=>{ run+= e.type==="credit"?e.amount:-e.amount; if(Math.abs(run)<0.005) from=i+1; });
+  let rows=all.slice(from); const cut=rows.length>15; if(cut) rows=rows.slice(-15);
+  const d=t=>{ const x=new Date(t); return `${String(x.getDate()).padStart(2,"0")}/${String(x.getMonth()+1).padStart(2,"0")}`; };
+  const lines=rows.map(e=> e.type==="credit"
+    ? `• ${d(e.at)} · كريدي ${money(e.amount)}${e.note?` (${e.note})`:""}`
+    : `• ${d(e.at)} · خلّصتي ${money(e.amount)} ✓`);
+  const b=balanceOf(c.id), shop=(owner&&owner.shop)||"الحانوت";
+  return [`السلام ${c.name} 👋`, `هادا الحساب ديالك ف ${shop}:`, "",
+    ...(cut?["(آخر 15 حركة)"]:[]), ...(lines.length?lines:["ما كاين حتى حركة."]), "",
+    b>0.005?`💰 الباقي عليك: ${money(b)}`: b<-0.005?`✅ عندك عندنا: ${money(-b)}`:"✅ الحساب خالص، شكرا!",
+    "", `شكرا على الثقة 🙏 · ${shop}`].join("\n");
+}
+function paintClientSend(c){
+  const n=c.phone?waNumber(c.phone):"";
+  const ok=n && validWa(c.phone);
+  $("#csSend").href=`https://wa.me/${ok?n:""}?text=${encodeURIComponent(clientStatement(c))}`;
+  $("#csSend").textContent= ok ? "💬 صيفط الحساب ل الكليان" : "💬 صيفط الحساب (اختار الكليان ف واتساب)";
+  $("#csPhoneRow").hidden=!!ok; if(!ok) $("#csPhoneIn").value=c.phone||"";
+}
+$("#csPhoneSave").onclick=async()=>{
+  const c=clients.find(x=>x.id===openClientId); if(!c) return;
+  const p=$("#csPhoneIn").value.trim();
+  if(!validWa(p)){ toast("رقم الواتساب ماشي صحيح"); $("#csPhoneIn").focus(); return; }
+  await saveClient({...c,phone:p}); toast("تسجّل الرقم ✓"); renderClientSheet();
+};
 function openClient(id){ openClientId=id; delArmed=false; $("#btnDelClient").textContent="مسح الكليان"; $("#eAmount").value=""; $("#eNote").value=""; renderClientSheet(); $("#clientSheet").hidden=false; }
 $("#btnCloseClient").onclick=()=>{ $("#clientSheet").hidden=true; openClientId=null; };
 $("#clientSheet").addEventListener("click",e=>{ if(e.target.id==="clientSheet") $("#btnCloseClient").click(); });
