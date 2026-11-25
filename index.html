@@ -987,6 +987,10 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 .crreg b{font-size:16px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crreg small{font-size:13px;color:var(--muted)}
 .cnum{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);background:rgba(127,127,127,.15);border-radius:8px;padding:1px 6px;margin-inline-end:6px;direction:ltr;display:inline-block}
+
+.bkplan{display:flex;flex-wrap:wrap;gap:10px 16px}
+.bkplan label{display:grid;gap:4px;font-size:14px;color:var(--muted);font-weight:600}
+.bkplan select{font:inherit;font-size:16px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:140px}
 </style>
 
 </head>
@@ -1175,6 +1179,12 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
   <section class="supwrap" id="backupSec">
     <h2>النسخة الاحتياطية</h2>
     <p class="note" style="margin:0">المعلومات ديالك (السلعة، الكريدي، الموزّعين) محفوظة غير ف هاد التيليفون. إلا تمسح المتصفح ولا تبدّل التيليفون كتضيع. حمّل نسخة و صيفطها لراسك ف واتساب ولا إيميل.</p>
+    <div class="bkplan">
+      <label>فكّرني نصيفط النسخة
+        <select id="bkFreq"><option value="1">كل نهار</option><option value="3">كل 3 أيام</option><option value="7">كل سيمانة</option></select></label>
+      <label>ملي نسدّ الحانوت، مع
+        <select id="bkHour"><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option></select></label>
+    </div>
     <div class="note" id="backupStatus"></div>
     <div class="note" id="storageNote"></div>
     <div class="actions" style="justify-content:flex-start">
@@ -4278,6 +4288,8 @@ let loaded=false, useIDB=false, idbConn=null;
 /* every shop (= its WhatsApp number) has its own shelf, notebook, sales and baskets on this phone.
    The first shop keeps what was saved before ("data"); a new number starts empty; an old number comes back. */
 var curShop="";
+/* backup reminders are kept per shop (several shops can share one phone) */
+function bkKey(k){ return KEY+"-"+k+(curShop?":"+curShop:""); }
 const SHOPS_KEY="hanout-shops";
 const shopIdOf=o=>(o&&o.phone)?waNumber(o.phone):"";
 const dataKey=id=>id?"data:"+id:IDB_KEY;
@@ -4657,7 +4669,7 @@ $("#backupDl").onclick=()=>{
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download=backupName();
   document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-  try{ localStorage.setItem(KEY+"-lastbackup",String(Date.now())); }catch{}
+  try{ localStorage.setItem(bkKey("lastbackup"),String(Date.now())); }catch{}
   backupNote(); toast("تحمّلات النسخة. خبّيها ف شي بلاصة مزيانة (واتساب، إيميل، Drive).");
 };
 $("#backupBtn").onclick=()=>$("#backupFile").click();
@@ -4683,7 +4695,7 @@ $("#backupFile").addEventListener("change",async e=>{
   }catch{ toast("هاد الملف ماشي نسخة ديال حانوت الحومة الذكي."); }
 });
 function backupNote(){
-  let last=0; try{ last=+localStorage.getItem(KEY+"-lastbackup")||0; }catch{}
+  let last=0; try{ last=+localStorage.getItem(bkKey("lastbackup"))||0; }catch{}
   const days=last?Math.floor((Date.now()-last)/864e5):null;
   $("#backupStatus").textContent = last ? (days===0?"آخر نسخة: اليوم.":`آخر نسخة: هادي ${days} يوم.`) : "عمرك ما درتي نسخة احتياطية.";
   $("#backupStatus").style.color = (!last||days>7) ? "var(--low)" : "var(--muted)";
@@ -4695,30 +4707,46 @@ function backupFile(){
   const data=JSON.stringify({v:1,products,sales,clients,ledger,suppliers,orders,sledger,owner,savedAt:Date.now()});
   return new File([data],backupName(),{type:"application/json"});
 }
+/* backup reminder: every day by default, at the owner's closing hour (21:00 by default) */
+const bkFreq=()=>{ let v=1; try{ v=+localStorage.getItem(bkKey("bkfreq"))||1; }catch{} return [1,3,7].includes(v)?v:1; };
+const bkHour=()=>{ let v=21; try{ v=+localStorage.getItem(bkKey("bkhour"))||21; }catch{} return v>=18&&v<=23?v:21; };
 function backupDue(){
   if(!owner||!ownerComplete()||!(products.length||sales.length||clients.length)) return false;
-  let last=0, later=0; try{ last=+localStorage.getItem(KEY+"-lastbackup")||0; later=+localStorage.getItem(KEY+"-bklater")||0; }catch{}
-  if(Date.now()<later) return false;
-  return !last || Date.now()-last>7*864e5;
+  let last=0, later=0; try{ last=+localStorage.getItem(bkKey("lastbackup"))||0; later=+localStorage.getItem(bkKey("bklater"))||0; }catch{}
+  const now=new Date(); if(now.getTime()<later) return false;
+  if(!last) return true;
+  const day0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();      // today 00:00
+  const dueDay=day0-(bkFreq()-1)*864e5;                                                // the backup should be newer than this
+  if(last>=dueDay) return false;
+  // missed a whole period (the shop was closed or the app not opened at night): remind at any hour
+  if(last<dueDay-864e5) return true;
+  return now.getHours()>=bkHour();
 }
 function paintBkBar(){
   const show=backupDue(); $("#bkBar").hidden=!show; if(!show) return;
-  let last=0; try{ last=+localStorage.getItem(KEY+"-lastbackup")||0; }catch{}
-  $("#bkBarT").textContent = last ? `💾 هادي ${Math.floor((Date.now()-last)/864e5)} يوم ما درتي نسخة احتياطية. ضغطة وحدة و تكون عندك ف واتساب.` : "💾 دير نسخة احتياطية ديال الحانوت: ضغطة وحدة و تكون عندك ف واتساب. إلا ضاع التيليفون، كلشي كيرجع منها.";
+  let last=0; try{ last=+localStorage.getItem(bkKey("lastbackup"))||0; }catch{}
+  const night=new Date().getHours()>=bkHour(), days=last?Math.floor((Date.now()-last)/864e5):0;
+  $("#bkBarT").textContent = last && night && days<2 ? "🌙 سدّيتي النهار؟ صيفط النسخة ديال اليوم ل الواتساب ديالك (اختار «أنا» ف واتساب)." :
+    last ? `💾 هادي ${days} يوم ما درتي نسخة احتياطية. ضغطة وحدة و تكون عندك ف واتساب.` : "💾 دير نسخة احتياطية ديال الحانوت: ضغطة وحدة و تكون عندك ف واتساب. إلا ضاع التيليفون، كلشي كيرجع منها.";
 }
 $("#bkShare").onclick=async()=>{
   const f=backupFile();
   try{
     if(navigator.canShare && navigator.canShare({files:[f]})){
       await navigator.share({files:[f],title:"نسخة احتياطية · حانوت الحومة الذكي"});
-      try{ localStorage.setItem(KEY+"-lastbackup",String(Date.now())); }catch{}
+      try{ localStorage.setItem(bkKey("lastbackup"),String(Date.now())); }catch{}
       backupNote(); paintBkBar(); toast("تصيفطات النسخة ✓ خبّيها ف واتساب."); return;
     }
   }catch(e){ if(e&&e.name==="AbortError") return; }
   $("#backupDl").click(); paintBkBar();
 };
-$("#bkLater").onclick=()=>{ try{ localStorage.setItem(KEY+"-bklater",String(Date.now()+864e5)); }catch{} $("#bkBar").hidden=true; };
-setInterval(paintBkBar,60*60e3);
+$("#bkLater").onclick=()=>{ try{ localStorage.setItem(bkKey("bklater"),String(Date.now()+(bkFreq()===1?3600e3:864e5))); }catch{} $("#bkBar").hidden=true; };
+setInterval(paintBkBar,10*60e3);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") paintBkBar(); });
+function paintBkPlan(){ if($("#bkFreq")) $("#bkFreq").value=String(bkFreq()); if($("#bkHour")) $("#bkHour").value=String(bkHour()); }
+$("#bkFreq").onchange=e=>{ try{ localStorage.setItem(bkKey("bkfreq"),e.target.value); }catch{} paintBkBar(); toast("تسجّل ✓"); };
+$("#bkHour").onchange=e=>{ try{ localStorage.setItem(bkKey("bkhour"),e.target.value); }catch{} paintBkBar(); toast("تسجّل ✓"); };
+paintBkPlan();
 
 /* ---------- Android: install the app on the home screen with one tap ---------- */
 let installEvt=null;
@@ -4768,7 +4796,7 @@ try{ speechSynthesis.getVoices(); }catch{}
   window.HANOUT_ON_PHONE=true; initOwner();
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent), homeScreen=window.navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
   $("#modeNote").textContent = ios && !homeScreen
-    ? "ف آيفون: باش ما تضيعش المعلومات، زيد التطبيق للشاشة: ضغط ⬆️ و من بعد «Sur l'écran d'accueil / Add to Home Screen». و دير نسخة احتياطية مرة ف السيمانة."
+    ? "ف آيفون: باش ما تضيعش المعلومات، زيد التطبيق للشاشة: ضغط ⬆️ و من بعد «Sur l'écran d'accueil / Add to Home Screen». و صيفط النسخة الاحتياطية كل نهار ملي تسدّ."
     : "المعلومات ديالك محفوظة غير ف هاد التيليفون. دير نسخة احتياطية مرة ف السيمانة (لتحت).";
 })();
 </script>

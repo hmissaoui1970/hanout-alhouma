@@ -157,6 +157,23 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     const n=await ev(()=>products.length); ok(n>=3,"no products");
   });
 
+  await t("backup reminder: daily at closing time, per shop",async()=>{
+    const r=await ev(()=>{
+      const realDate=Date; const set=(h,lastAgoH)=>{
+        localStorage.setItem(bkKey("bkfreq"),"1"); localStorage.setItem(bkKey("bkhour"),"21"); localStorage.removeItem(bkKey("bklater"));
+        const now=new realDate(); now.setHours(h,30,0,0);
+        localStorage.setItem(bkKey("lastbackup"),String(now.getTime()-lastAgoH*3600e3));
+        window.Date=class extends realDate{ constructor(...a){ super(...(a.length?a:[now.getTime()])); } static now(){ return now.getTime(); } };
+        const due=backupDue(); window.Date=realDate; return due; };
+      return { morningAfterBackupYesterday: set(10,14), nightNoBackupToday: set(21,24), nightBackedUpToday: set(22,0.5), missedTwoDays: set(9,60) };
+    });
+    ok(r.morningAfterBackupYesterday===false,"should wait until closing time");
+    ok(r.nightNoBackupToday===true,"should remind at closing time");
+    ok(r.nightBackedUpToday===false,"already backed up today");
+    ok(r.missedTwoDays===true,"missed days should remind at any hour");
+    ok(await ev(()=>bkKey("x").includes(":")),"reminder not kept per shop");
+  });
+
   await t("backup includes the owner",async()=>{
     const r=await ev(()=>{ const f=backupFile(); return f.text(); });
     const d=JSON.parse(r); ok(d.owner && d.owner.shop==="حانوت التجربة" && Array.isArray(d.products),"backup incomplete");
