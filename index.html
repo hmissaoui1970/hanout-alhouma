@@ -992,11 +992,16 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 .bkplan label{display:grid;gap:4px;font-size:14px;color:var(--muted);font-weight:600}
 .bkplan select{font:inherit;font-size:16px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:140px}
 
-.cssend{display:grid;gap:8px;margin:6px 0 2px}
+.cssend{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:6px 0 2px;min-width:0}
+#clientSheet .cssend a.btn.wa{white-space:normal;text-align:center;line-height:1.3;padding:10px 14px}
+.csphone input{width:100%}
 #clientSheet .cssend a.btn.wa{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:16px;background:#25d366!important;border-color:#25d366!important;color:#05301a!important;font-weight:800;text-decoration:none;box-shadow:0 8px 22px -8px rgba(37,211,102,.7)}
 .csphone{display:flex;gap:8px}
 .csphone[hidden]{display:none}
 .csphone input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+
+.phonelim{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--muted);font-weight:600;margin:2px 0 8px}
+.phonelim select{font:inherit;font-size:15px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 </style>
 
 </head>
@@ -1114,9 +1119,11 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       </div>
       <form class="newclient" id="newClientForm">
         <input id="ncName" placeholder="سمية الكليان" aria-label="سمية الكليان" required>
-        <input id="ncPhone" placeholder="التيليفون (ماشي ضروري)" aria-label="التيليفون" inputmode="tel">
+        <input id="ncPhone" placeholder="رقم الواتساب (مزيان تزيدو)" aria-label="رقم الواتساب ديال الكليان" inputmode="tel" dir="ltr">
         <button class="btn primary" type="submit">زيد كليان</button>
       </form>
+      <label class="phonelim">📱 طلب رقم الواتساب ملي الكريدي ديال الكليان يفوت
+        <select id="phoneLimit"><option value="50">50 درهم</option><option value="100">100 درهم</option><option value="200">200 درهم</option><option value="500">500 درهم</option><option value="0">ما نطلبش</option></select></label>
       <input class="filter" id="clientFilter" placeholder="قلّب بالسمية، بالنمرة (#12) ولا بالتيليفون" aria-label="قلّب على كليان">
       <ul class="clients" id="clients"></ul>
     </div>
@@ -1302,6 +1309,15 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <button class="btn" id="shareNative" type="button" hidden>📤 شارك</button>
     <button class="btn" id="shareCopy" type="button">📋 نسخ الرابط</button>
     <button class="btn" id="shareClose" type="button">سدّ</button>
+  </div>
+</div>
+<div class="sheet" id="phoneAsk" hidden dir="rtl" lang="ar-MA">
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="paT">
+    <h2 id="paT" style="margin:0"></h2>
+    <p class="note" id="paNote" style="margin:0"></p>
+    <div class="field"><input id="paIn" inputmode="tel" placeholder="06 12 34 56 78" aria-label="رقم الواتساب ديال الكليان" dir="ltr"></div>
+    <div class="note" id="paErr" role="alert"></div>
+    <div class="actions"><button type="button" class="btn" id="paCancel">لغي</button><button type="button" class="btn primary" id="paSave">حفظ و كمّل</button></div>
   </div>
 </div>
 <div class="sheet" id="welSheet" hidden dir="rtl" lang="ar-MA">
@@ -1761,6 +1777,7 @@ $("#filter").addEventListener("input",render);
 const fmtDay = t => new Date(t).toLocaleDateString("ar-MA",{day:"numeric",month:"short"});
 let openClientId=null, delArmed=false;
 function renderCarnet(){
+  if($("#phoneLimit")) $("#phoneLimit").value=String(phoneLimit());
   const q=$("#clientFilter").value;
   const rows=clients.map(c=>({c,b:balanceOf(c.id),last:lastOf(c.id),s:clientScore(c,q)}))
     .filter(x=>x.s>0)
@@ -1777,7 +1794,7 @@ function renderCarnet(){
     ow.classList.add(b>0?"due":"clear");
     ow.textContent=b>0?money(b):"خالص";
     if(b>0){ const sm=document.createElement("small"); sm.textContent="كيتسال"; ow.prepend(sm); }
-    btn.querySelector(".cmeta").textContent=[c.phone, last?("آخر مرة: "+fmtDay(last)):""].filter(Boolean).join(" · ")||"ما كاين حتى حركة";
+    btn.querySelector(".cmeta").textContent=[hasWa(c)?c.phone:"📵 بلا رقم", last?("آخر مرة: "+fmtDay(last)):""].filter(Boolean).join(" · ");
     btn.onclick=()=>openClient(c.id);
     li.append(btn); ul.append(li);
   }
@@ -1830,6 +1847,7 @@ function paintClientSend(c){
   $("#csSend").textContent= ok ? "💬 صيفط الحساب ل الكليان" : "💬 صيفط الحساب (اختار الكليان ف واتساب)";
   $("#csPhoneRow").hidden=!!ok; if(!ok) $("#csPhoneIn").value=c.phone||"";
 }
+if($("#phoneLimit")){ $("#phoneLimit").value=String(phoneLimit()); $("#phoneLimit").onchange=e=>{ try{ localStorage.setItem(bkKey("phonelimit"),e.target.value); }catch{} toast("تسجّل ✓"); }; }
 $("#csPhoneSave").onclick=async()=>{
   const c=clients.find(x=>x.id===openClientId); if(!c) return;
   const p=$("#csPhoneIn").value.trim();
@@ -2397,6 +2415,7 @@ async function checkoutBasket(mode){
   const b=curBasket(); const lines=basketLines(b); if(!lines.length) return;
   const clientName=($("#bClient").value||b.client||"").trim();
   if(mode==="credit" && !clientName){ openCreditSheet(); return; }   // ask "على شكون؟" right here, with the customer list
+  if(mode==="credit" && !await phoneGate(clientName,basketTotal(b))) return;
   const unpriced=lines.filter(l=>!l.p && !l.total);
   if(unpriced.length){ toast(`كتب الثمن ديال ${unpriced.map(l=>l.name).join("، ")} قبل ما تخلّص.`); const z=$("#bItems .pin.zero"); if(z) z.focus(); return; }
   const total=basketTotal(b);
@@ -3694,7 +3713,30 @@ async function ensureClient(name){
   const clean=String(name||"").replace(/^(على|ل)\s+/,"").trim();
   return {c:await saveClient({id:newId(),name:clean,phone:""}),isNew:true};
 }
+/* above the owner's limit (100 DH by default), a client with no WhatsApp number must give one before more credit */
+function phoneLimit(){ let v=null; try{ v=localStorage.getItem(bkKey("phonelimit")); }catch{} return v==null?100:(+v||0); }
+function hasWa(c){ return !!(c && c.phone && validWa(c.phone)); }
+function askPhone(name,owed,lim){
+  return new Promise(res=>{
+    $("#paT").textContent=`رقم الواتساب ديال ${name}`;
+    $("#paNote").textContent=`الكريدي ديال ${name} غادي يولّي ${money(owed)}، فايت ${money(lim)}. زيد الرقم ديالو باش تقدر تصيفط ليه الحساب.`;
+    $("#paIn").value=""; $("#paErr").textContent=""; $("#phoneAsk").hidden=false; setTimeout(()=>$("#paIn").focus(),60);
+    const done=v=>{ $("#phoneAsk").hidden=true; $("#paSave").onclick=$("#paCancel").onclick=null; res(v); };
+    $("#paCancel").onclick=()=>done(null);
+    $("#paSave").onclick=()=>{ const p=$("#paIn").value.trim(); if(!validWa(p)){ $("#paErr").textContent="رقم الواتساب ماشي صحيح."; $("#paIn").focus(); return; } done(p); };
+  });
+}
+async function phoneGate(name,add){
+  const lim=phoneLimit(); const c=findClient(name);
+  if(!lim || hasWa(c)) return true;
+  const owed=(c?balanceOf(c.id):0)+(+add||0);
+  if(owed<=lim+0.005) return true;
+  const p=await askPhone(c?c.name:String(name).trim(),owed,lim); if(!p) return false;
+  if(c) await saveClient({...c,phone:p}); else { const r=await ensureClient(name); await saveClient({...r.c,phone:p}); }
+  toast("تسجّل الرقم ✓"); return true;
+}
 async function doCredit(clientName,{items,amount,note}={}){
+  if(!await phoneGate(clientName,+amount||0)) return `ما تكتبش الكريدي: خاص رقم الواتساب ديال ${String(clientName).trim()}.`;
   const {c,isNew}=await ensureClient(clientName);
   const before=balanceOf(c.id);
   let amt=+amount||0, desc=note||"", missing=[];

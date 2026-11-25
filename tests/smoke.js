@@ -122,6 +122,26 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     await ev(()=>document.getElementById('btnCloseClient').click());
   });
 
+  await t("credit above 100 DH asks for the client's WhatsApp first",async()=>{
+    await ev(async()=>{ localStorage.setItem(bkKey("phonelimit"),"100");
+      await saveClient({id:'pl1',name:'عمي بوشعيب',phone:''}); await addEntry({clientId:'pl1',at:Date.now(),type:'credit',amount:95,note:''});
+      showTab('caisse'); curBasket().items=[]; saveBaskets(); addToBasket('t-coca'); render();
+      document.getElementById('bClient').value='عمي بوشعيب'; window.__p=checkoutBasket("credit"); });
+    await page.waitForTimeout(150);
+    ok(await ev(()=>!document.getElementById('phoneAsk').hidden),"no ask window above the limit");
+    await ev(()=>document.getElementById('paCancel').click()); await ev(()=>window.__p);
+    ok(await ev(()=>Math.abs(balanceOf('pl1')-95)<0.01),"cancel should not write the credit");
+    await ev(()=>{ document.getElementById('bClient').value='عمي بوشعيب'; window.__p=checkoutBasket("credit"); });
+    await page.waitForTimeout(150);
+    await ev(()=>{ document.getElementById('paIn').value='0661112233'; document.getElementById('paSave').click(); }); await ev(()=>window.__p);
+    const r=await ev(()=>({b:balanceOf('pl1'),ph:clients.find(c=>c.id==='pl1').phone}));
+    ok(r.b>95 && r.ph==='0661112233',"after the number the credit should go through: "+JSON.stringify(r));
+    // small credit, no number: no question
+    await ev(async()=>{ await saveClient({id:'pl2',name:'ولد مي زهرة',phone:''}); });
+    const msg=await ev(()=>doCredit('ولد مي زهرة',{amount:10}));
+    ok(await ev(()=>document.getElementById('phoneAsk').hidden) && /كتبت/.test(msg),"small credit should not ask");
+  });
+
   await t("share card opens with the QR and a WhatsApp link",async()=>{
     await ev(()=>document.getElementById('shareOpen').click());
     ok(await ev(()=>!document.getElementById('shareSheet').hidden),"share card not open");
