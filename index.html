@@ -3011,7 +3011,7 @@ $("#lockReset").addEventListener("submit",async e=>{
   let ok=false;
   if(phoneOk){
     if(!$("#lockRescueBox").hidden) ok=rescueOk($("#lockRescue").value);
-    else if(owner.rkey) ok=(await keyHash($("#lockWord").value))===owner.rkey;
+    else if(owner.rkey){ const w=$("#lockWord").value; ok = keyNorm(w).length===6 ? rescueOk(w) : (await keyHash(w))===owner.rkey; }   // a 6-digit rescue code typed in the key box works too
     else ok=true;                                   // shops from before the recovery key: the number, then a key is made right after
   }
   if(!ok){
