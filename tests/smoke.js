@@ -267,6 +267,23 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     await ev(async(k)=>{ owner.rkey=k; localStorage.removeItem(bkKey("resetguard")); setPin(await pinHash("1234")); hideLock(); },saved);
   });
 
+  await t("fingerprint offered after sign-up, then the recovery key",async()=>{
+    const r=await ev(async()=>{
+      const old={bio:owner.bio,rkey:owner.rkey,can:bioCan,create:navigator.credentials.create};
+      bioCan=true; owner.bio=null; owner.rkey=null; localStorage.removeItem(bkKey("biolater")); localStorage.removeItem(bkKey("keylater"));
+      navigator.credentials.create=async()=>({rawId:new Uint8Array([1,2,3,4]).buffer});
+      document.getElementById('welSheet').hidden=false; document.getElementById('welClose').click();
+      await new Promise(r=>setTimeout(r,700)); const asked=!document.getElementById('bioAsk').hidden;
+      document.getElementById('baYes').click(); await new Promise(r=>setTimeout(r,900));
+      const res={asked, bio:!!owner.bio, keyNext:!document.getElementById('keySheet').hidden};
+      document.getElementById('keySheet').hidden=true; pendingKey="";
+      owner.bio=null; maybeAskBio(null); await new Promise(r=>setTimeout(r,100)); document.getElementById('baLater').click();
+      maybeAskBio(null); res.snoozed=document.getElementById('bioAsk').hidden;
+      Object.assign(owner,{bio:old.bio,rkey:old.rkey}); bioCan=old.can; navigator.credentials.create=old.create; localStorage.removeItem(bkKey("biolater"));
+      return res; });
+    ok(r.asked,"fingerprint not offered after the welcome screen"); ok(r.bio,"fingerprint not saved"); ok(r.keyNext,"recovery key not asked after the fingerprint"); ok(r.snoozed,"«من بعد» does not wait");
+  });
+
   await t("data survives a reload",async()=>{
     await page.waitForTimeout(600); await fresh();
     for(const k of "1234") await page.keyboard.press(k); await page.waitForTimeout(700);

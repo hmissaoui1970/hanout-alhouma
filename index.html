@@ -1353,6 +1353,14 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <button type="button" class="lock-small" id="ksLater">من بعد</button>
   </div>
 </div>
+<div class="sheet" id="bioAsk" hidden dir="rtl" lang="ar-MA">
+  <div class="card keycard" role="dialog" aria-modal="true" aria-labelledby="baT">
+    <h2 id="baT" style="margin:0">👆 دخول بلا كود؟</h2>
+    <p class="note" style="margin:0">حل الحانوت بالبصمة ولا Face ID، بلا ما تكتب الكود. و إلا شي نهار نسيتي الكود، بالبصمة تختار كود جديد ف ثانية.</p>
+    <button type="button" class="btn primary" id="baYes">👆 حل بالبصمة / Face ID</button>
+    <button type="button" class="lock-small" id="baLater">من بعد</button>
+  </div>
+</div>
 <div class="sheet" id="welSheet" hidden dir="rtl" lang="ar-MA">
   <div class="card welc" role="dialog" aria-modal="true" aria-labelledby="welT">
     <h2 id="welT"></h2>
@@ -2802,7 +2810,7 @@ function showWelcome(o){
     welcomeAuto(o).then(ok=>{ note.textContent= ok ? "✓ صيفطنا ليك رسالة الترحيب ف الواتساب ديالك." : "ما كاينش الأنترنيت دابا. رسالة الترحيب غادي توصلك ملي يرجع الأنترنيت."; });
   }
 }
-$("#welClose").onclick=()=>{ $("#welSheet").hidden=true; setTimeout(maybeAskKey,400); };
+$("#welClose").onclick=()=>{ $("#welSheet").hidden=true; setTimeout(afterOpen,400); };
 /* share the app: QR card + WhatsApp / share / copy */
 const APP_URL="https://hmissaoui1970.github.io/hanout-alhouma/";
 const shareText=()=>`السلام 👋\nجرّب حانوت الحومة الذكي: لاكيس، الكريدي، الستوك و الكوموند للموزّع ف التيليفون ديالك.\n${APP_URL}\nضغط «أنا جديد» و سجّل الحانوت ديالك.`;
@@ -2963,7 +2971,7 @@ async function pressKey(v){
   if(lockMode==="unlock"||lockMode==="check"){
     if(await pinOk(code)){
       lockFails=0; const a=lockAfter;
-      if(a){ lockAfter=null; lockBusy=false; a(); } else { hideLock(); if(lockMode==="unlock") setTimeout(maybeAskKey,500); }
+      if(a){ lockAfter=null; lockBusy=false; a(); } else { hideLock(); if(lockMode==="unlock") setTimeout(afterOpen,500); }
     } else { lockFails++; lockShake(lockFails>=3?"الكود غالط. إلا نسيتيه، ضغط «نسيتي الكود؟» لتحت.":"الكود غالط، عاود."); }
   } else if(lockMode==="new1"){
     lockFirst=code; setTimeout(()=>{ lockMode="new2"; lockBuf=""; $("#lockT").textContent=LOCK_TITLES.new2; paintDots(); lockBusy=false; },220);
@@ -3095,11 +3103,22 @@ async function bioCheck(){
 $("#lockBio").onclick=async()=>{
   if(!(await bioCheck())){ $("#lockErr").textContent="ما تقبلاتش البصمة. دخل الكود."; return; }
   lockFails=0; const after=lockAfter; lockAfter=null;
-  if(after) after(); else { hideLock(); if(lockMode==="unlock") setTimeout(maybeAskKey,500); }
+  if(after) after(); else { hideLock(); if(lockMode==="unlock") setTimeout(afterOpen,500); }
 };
-$("#bioSet").onclick=async()=>{
-  if(!owner||!bioCan) return;
-  const turnOn=async()=>{
+/* asked once after sign-up (and again every few days until the owner says yes): fingerprint first, then the recovery key */
+function afterOpen(){ maybeAskBio(maybeAskKey); }
+let bioNext=null;
+function maybeAskBio(next){
+  const go=()=>{ if(next) next(); };
+  if(!bioCan||!owner||!owner.pin||owner.bio) return go();
+  let later=0; try{ later=+localStorage.getItem(bkKey("biolater"))||0; }catch{} if(Date.now()<later) return go();
+  if(!$("#lock").hidden||!$("#onb").hidden||!$("#welSheet").hidden||!$("#keySheet").hidden) return;
+  bioNext=next; $("#bioAsk").hidden=false;
+}
+function bioAskDone(){ $("#bioAsk").hidden=true; const n=bioNext; bioNext=null; if(n) setTimeout(n,400); }
+$("#baYes").onclick=async()=>{ await bioEnroll(); bioAskDone(); };
+$("#baLater").onclick=()=>{ try{ localStorage.setItem(bkKey("biolater"),String(Date.now()+3*864e5)); }catch{} bioAskDone(); };
+async function bioEnroll(){
     try{
       const ch=crypto.getRandomValues(new Uint8Array(32)), uid=crypto.getRandomValues(new Uint8Array(16));
       const c=await navigator.credentials.create({publicKey:{challenge:ch,rp:{name:"Hanout Alhouma Dakye"},
@@ -3108,9 +3127,12 @@ $("#bioSet").onclick=async()=>{
         authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},timeout:60000}});
       if(!c) return;
       owner.bio=b64u(c.rawId); try{ localStorage.setItem(OWNER_KEY,JSON.stringify(owner)); }catch{} if(typeof rememberShop==="function") rememberShop(owner);
-      hideLock(); paintPinCard(); toast("✓ دابا تقدر تحل الحانوت بالبصمة / Face ID.");
-    }catch{ hideLock(); toast("ما تفعّلاتش البصمة."); }
-  };
+      hideLock(); paintPinCard(); toast("✓ دابا تقدر تحل الحانوت بالبصمة / Face ID."); return true;
+    }catch{ hideLock(); toast("ما تفعّلاتش البصمة."); return false; }
+}
+$("#bioSet").onclick=async()=>{
+  if(!owner||!bioCan) return;
+  const turnOn=bioEnroll;
   if(owner.bio){ owner.bio=null; try{ localStorage.setItem(OWNER_KEY,JSON.stringify(owner)); }catch{} paintPinCard(); toast("تحيّدات البصمة."); return; }
   if(owner.pin) showLock("check",turnOn); else turnOn();
 };
