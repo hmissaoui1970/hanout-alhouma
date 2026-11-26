@@ -157,6 +157,8 @@ body.locked{overflow:hidden}
 .impsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.impsum div{padding:10px;border-radius:14px;border:1px solid var(--line);text-align:center}.impsum b{display:block;font-size:22px}
 .subbar{margin:0 0 12px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,#ffb020 55%,var(--line));background:color-mix(in srgb,#ffb020 16%,var(--surface));display:grid;gap:8px}
 .subbar.soft{border-color:var(--line);background:var(--surface)}
+.rnplans{display:grid;gap:8px}.rnplans a{display:flex;justify-content:space-between;align-items:center;gap:8px;text-decoration:none;min-height:52px}
+.rnplans a small{opacity:.85;font-weight:600}.rnplans a .tag{font-size:.8rem;padding:2px 8px;border-radius:99px;background:#22c55e;color:#04210f;font-weight:800}
 .subbar p{margin:0;font-weight:600;line-height:1.6}.subbar .actions{justify-content:flex-start;flex-wrap:wrap;gap:8px;margin:0}
 .subcode{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.subcode input{flex:1;min-width:170px;font-size:20px;letter-spacing:2px;text-align:center;direction:ltr}
 .sublock{position:fixed;inset:0;z-index:55;background:var(--bg);color:var(--ink);display:grid;place-items:center;padding:24px 16px;overflow:auto}
@@ -1055,7 +1057,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
   </header>
   <div class="subbar soft" id="bkBar" hidden role="status"><p id="bkBarT"></p><div class="actions"><button class="btn primary" type="button" id="bkShare">📲 صيفط النسخة ف واتساب</button><button class="btn" type="button" id="bkLater">من بعد</button></div></div>
   <div class="subbar soft" id="instBar" hidden role="status"><p>زيد التطبيق للشاشة ديال التيليفون، باش يتحل بحال تطبيق و ما تضيعش المعلومات.</p><div class="actions"><button class="btn primary" type="button" id="instBtn">📲 زيد التطبيق للشاشة</button><button class="btn" type="button" id="instLater">من بعد</button></div></div>
-  <div class="subbar" id="subBar" hidden role="status"><p id="subBarT"></p><div class="actions"><button class="btn primary" type="button" id="subBarCode">🔑 دخّل الكود</button><button class="btn" type="button" id="subBarSave">💾 حمّل نسخة</button><a class="btn" id="subBarWa" target="_blank" rel="noopener">💬 خلّص ف واتساب</a></div></div>
+  <div class="subbar" id="subBar" hidden role="status"><p id="subBarT"></p><div class="actions"><a class="btn primary" id="subBarWa" target="_blank" rel="noopener">🔁 جدّد الاشتراك</a><button class="btn" type="button" id="subBarCode">🔑 دخّل الكود</button><button class="btn" type="button" id="subBarSave">💾 حمّل نسخة</button></div></div>
   <div class="note modenote" id="modeNote"></div>
   <div class="zband" aria-hidden="true"></div>
   <div class="trust" id="trust">
@@ -1201,6 +1203,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <p class="note" id="subNote" style="margin:0"></p>
     <form class="subcode" id="subForm"><input id="subIn" inputmode="numeric" autocomplete="off" placeholder="الكود ديال الاشتراك" aria-label="الكود ديال الاشتراك"><button class="btn primary" type="submit">دخّل الكود</button></form>
     <div class="note" id="subErr" role="alert"></div>
+    <a class="btn" id="subSecWa" target="_blank" rel="noopener">🔁 جدّد الاشتراك ف واتساب</a>
   </section>
   <section class="supwrap" id="backupSec">
     <h2>النسخة الاحتياطية</h2>
@@ -1247,7 +1250,7 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <form class="subcode" id="subLockForm"><input id="subLockIn" inputmode="numeric" autocomplete="off" placeholder="الكود ديال الاشتراك" aria-label="الكود ديال الاشتراك"><button class="btn primary" type="submit">دخّل الكود</button></form>
     <div class="note" id="subLockErr" role="alert"></div>
     <button class="btn" type="button" id="subLockSave">💾 حمّل نسخة احتياطية</button>
-    <a class="btn" id="subLockWa" target="_blank" rel="noopener">💬 خلّص ف واتساب</a>
+    <a class="btn" id="subLockWa" target="_blank" rel="noopener">🔁 جدّد الاشتراك</a>
   </div>
 </div>
 <div class="lock" id="lock" hidden dir="rtl" lang="ar-MA" role="dialog" aria-modal="true" aria-labelledby="lockT">
@@ -1351,6 +1354,15 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
     <a class="btn primary" id="ksSend" target="_blank" rel="noopener">📲 صيفطو ل الواتساب ديالي</a>
     <button type="button" class="btn" id="ksDone" disabled>✓ صيفطتو، كمّل</button>
     <button type="button" class="lock-small" id="ksLater">من بعد</button>
+  </div>
+</div>
+<div class="sheet" id="renewSheet" hidden dir="rtl" lang="ar-MA" style="z-index:60">
+  <div class="card keycard" role="dialog" aria-modal="true" aria-labelledby="rnT">
+    <h2 id="rnT" style="margin:0">🔁 جدّد الاشتراك</h2>
+    <p class="note" id="rnNote" style="margin:0"></p>
+    <div class="rnplans" id="rnPlans"></div>
+    <p class="note" style="margin:0">1. خلّص (CashPlus، Wafacash، تحويل بنكي…) &nbsp;2. ختار المدة هنا، كيتحل الواتساب بميساج واجد &nbsp;3. كيوصلك الكود، دخّلو ف «الاشتراك».</p>
+    <button type="button" class="lock-small" id="rnClose">إلغاء</button>
   </div>
 </div>
 <div class="sheet" id="bioAsk" hidden dir="rtl" lang="ar-MA">
@@ -4706,25 +4718,40 @@ function subState(){
   if(d<=r.until+SUB_GRACE) return {st:"notice",left:r.until+SUB_GRACE-d+1,r};
   return {st:"off",left:0,r};
 }
-function subWaLink(){
+/* renewing: the owner pays, picks how long, and his WhatsApp opens with a ready message for Hanout Alhouma.
+   The message carries his current end date, so the new period starts from there: paying early never loses a day. */
+const SUB_PLANS=[{m:1,dh:99,t:"شهر"},{m:3,dh:279,t:"3 شهور",tag:"وفّر 18 DH"},{m:12,dh:990,t:"عام كامل",tag:"شهرين فابور"}];
+function subWaLink(plan){
   const n=waNumber(PROVIDER_WA); if(!n) return "";
-  const msg=`سلام، بغيت نخلّص الاشتراك ديال حانوت الحومة الذكي.\nالحانوت: ${(owner&&owner.shop)||""}\nالواتساب: ${(owner&&owner.phone)||""}`;
+  const r=subRec();
+  const msg=`سلام، بغيت نجدّد الاشتراك ديال حانوت الحومة الذكي.\nالحانوت: ${(owner&&owner.shop)||""}\nالواتساب: +${owner?waNumber(owner.phone):""}\n${r.trial?"التجربة كتسالي":"الاشتراك كيسالي"} ف: ${subDate(r.until)}`+(plan?`\nالمدة: ${plan.t} (${plan.dh} DH)`:"");
   return `https://wa.me/${n}?text=${encodeURIComponent(msg)}`;
 }
+function openRenew(){
+  const r=subRec(), d=subDay(Date.now());
+  $("#rnNote").textContent = r.until>=d ? `${r.trial?"التجربة ديالك كتسالي":"الاشتراك ديالك كيسالي"} ف ${subDate(r.until)}. المدة الجديدة كتزاد من هاد النهار، ما كتخسر حتى نهار.` : `الاشتراك سالا ف ${subDate(r.until)}.`;
+  $("#rnPlans").innerHTML=SUB_PLANS.map((p,i)=>`<a class="btn${i?"":" primary"}" target="_blank" rel="noopener" href="${subWaLink(p)}"><span>${p.t} <small>· ${p.dh} DH</small></span>${p.tag?`<span class="tag">${p.tag}</span>`:""}</a>`).join("");
+  $("#rnPlans").querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>setTimeout(()=>{ $("#renewSheet").hidden=true; toast("ملّي يوصلك الكود، دخّلو ف «الاشتراك» 🔑"); },300)));
+  $("#renewSheet").hidden=false;
+}
+["#subBarWa","#subLockWa","#subSecWa"].forEach(id=>$(id).addEventListener("click",e=>{ e.preventDefault(); openRenew(); }));
+$("#rnClose").onclick=()=>{ $("#renewSheet").hidden=true; };
+const SUB_WARN=5;   // days before the end when the renew reminder shows
 function subCheck(){
   const bar=$("#subBar"), lock=$("#subLock");
   if(!curShop || !ownerComplete()){ bar.hidden=true; lock.hidden=true; subLocked=false; return; }
   const s=subState(), wa=subWaLink();
-  ["#subBarWa","#subLockWa"].forEach(id=>{ const a=$(id); a.hidden=!wa; if(wa) a.href=wa; });
+  ["#subBarWa","#subLockWa","#subSecWa"].forEach(id=>{ const a=$(id); a.hidden=!wa; if(wa) a.href=wa; });
   const note=s.st==="ok" ? (s.r.trial?`فترة التجربة حتى ${subDate(s.r.until)}.`:`الاشتراك خالص حتى ${subDate(s.r.until)} ✓`)
     : s.st==="notice" ? `الاشتراك سالا ف ${subDate(s.r.until)}. باقي ${s.left} يوم و يتوقف التطبيق.` : `الاشتراك سالا ف ${subDate(s.r.until)}. التطبيق متوقّف.`;
-  $("#subNote").textContent=note+(wa||(s.st==="ok"&&s.left>=3)?"":" تواصل مع حانوت الحومة الذكي ف واتساب باش تخلّص.");
+  $("#subNote").textContent=note+(wa||(s.st==="ok"&&s.left>=SUB_WARN)?"":" تواصل مع حانوت الحومة الذكي ف واتساب باش تخلّص.");
   if(s.st==="notice"){
     bar.hidden=false; bar.classList.remove("soft"); $("#subBarSave").hidden=false;
     $("#subBarT").textContent=`⚠️ الاشتراك سالا. باقي ليك ${s.left} يوم و يتوقف التطبيق. حمّل نسخة احتياطية، و خلّص باش يبقى خدّام.`;
-  } else if(s.st==="ok" && s.left<3){
+  } else if(s.st==="ok" && s.left<SUB_WARN){
     bar.hidden=false; bar.classList.add("soft"); $("#subBarSave").hidden=true;
-    $("#subBarT").textContent=s.left===0?"الاشتراك كيسالي اليوم. خلّص و دخّل الكود الجديد.":`الاشتراك كيسالي من بعد ${s.left} يام.`;
+    const what=s.r.trial?"التجربة":"الاشتراك";
+    $("#subBarT").textContent=(s.left===0?`🔔 ${what} ${s.r.trial?"كتسالي":"كيسالي"} اليوم.`:`🔔 ${what} ${s.r.trial?"كتسالي":"كيسالي"} ف ${subDate(s.r.until)} (باقي ${s.left} ${s.left===1?"نهار":"يام"}).`)+" جدّد دابا، و الشهر الجديد كيبدا من نهار السالية.";
   } else bar.hidden=true;
   subLocked=s.st==="off";
   if(subLocked){ $("#subLockP").textContent=`الاشتراك ديالك سالا ف ${subDate(s.r.until)}، و دازت شهر ديال المهلة. المعلومات ديالك كاملة باقا محفوظة ف هاد التيليفون، ما تمسح والو.`; }

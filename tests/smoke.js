@@ -284,6 +284,15 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     ok(r.asked,"fingerprint not offered after the welcome screen"); ok(r.bio,"fingerprint not saved"); ok(r.keyNext,"recovery key not asked after the fingerprint"); ok(r.snoozed,"«من بعد» does not wait");
   });
 
+  await t("renew reminder 5 days before the end, message carries the end date and plan",async()=>{
+    const r=await ev(()=>{ const old=localStorage.getItem(subKey()); const rec=subRec(); rec.until=subDay(Date.now())+4; localStorage.setItem(subKey(),JSON.stringify(rec)); subCheck();
+      const bar=!document.getElementById('subBar').hidden; openRenew(); const links=[...document.querySelectorAll('#rnPlans a')].map(a=>decodeURIComponent(a.href));
+      document.getElementById('renewSheet').hidden=true; if(old) localStorage.setItem(subKey(),old); else localStorage.removeItem(subKey()); subCheck();
+      return {bar, n:links.length, msg:links[1]||"", end:subDate(rec.until)}; });
+    ok(r.bar,"no reminder 4 days before the end"); ok(r.n===3,"plans missing");
+    ok(r.msg.includes(r.end) && r.msg.includes("3 شهور"),"message lacks end date or plan: "+r.msg);
+  });
+
   await t("data survives a reload",async()=>{
     await page.waitForTimeout(600); await fresh();
     for(const k of "1234") await page.keyboard.press(k); await page.waitForTimeout(700);
