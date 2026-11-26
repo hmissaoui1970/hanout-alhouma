@@ -1004,6 +1004,9 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
 .phonelim select{font:inherit;font-size:15px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 
 .lock-reset [hidden]{display:none!important}
+.lock-reset .lock-hint{margin:0;line-height:1.9;font-size:.95rem;opacity:.9}
+.lock-reset .lockpaste{width:100%;font-size:1.1rem;padding:14px}
+.lock-reset #lockWord{text-align:center;font-size:1.4rem;letter-spacing:.15em}
 .lock-reset .lock-small{background:none;border:0;color:#ff8cc6;font:inherit;font-size:.95rem;cursor:pointer;padding:4px;justify-self:center}
 #lock .lock-reset a.btn{text-decoration:none;text-align:center;background:#25d366!important;border-color:#25d366!important;color:#05301a!important;font-weight:800}
 
@@ -1258,12 +1261,13 @@ input[aria-invalid]{border-color:var(--low)!important;box-shadow:0 0 0 1px var(-
       <div class="lock-keys" id="lockKeys"></div>
     </div>
     <form class="lock-reset" id="lockReset" hidden>
-      <label for="lockPhone">رقم الواتساب ديال الحانوت</label>
-      <input id="lockPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="06 12 34 56 78">
-      <div id="lockWordBox"><label for="lockWord">مفتاح الإنقاذ (8 أرقام، لقاه ف الواتساب ديالك)</label>
-      <input id="lockWord" inputmode="numeric" autocomplete="off" placeholder="1234-5678" dir="ltr"></div>
-      <div id="lockRescueBox" hidden><label for="lockRescue">كود الإنقاذ (من حانوت الحومة الذكي)</label>
-      <input id="lockRescue" inputmode="numeric" autocomplete="off" placeholder="123456" dir="ltr"></div>
+      <div id="lockPhoneBox"><label for="lockPhone">رقم الواتساب ديال الحانوت</label>
+      <input id="lockPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="06 12 34 56 78"></div>
+      <div id="lockWordBox">
+        <p class="lock-hint">1. حلّ الواتساب ديالك و قلّب على الميساج <b>🔑 مفتاح الإنقاذ</b><br>2. نسخ المفتاح (ولا الميساج كامل) و رجع هنا</p>
+        <button class="btn lockpaste" type="button" id="lockPaste">📋 لصق المفتاح</button>
+        <input id="lockWord" inputmode="numeric" autocomplete="off" placeholder="1234-5678" dir="ltr" aria-label="مفتاح الإنقاذ ولا كود الإنقاذ">
+      </div>
       <div class="lock-err" id="lockResetErr" role="alert"></div>
       <button class="btn primary" type="submit">كمّل و ختار كود جديد</button>
       <button class="lock-small" type="button" id="lockNoWord">ما لقيتيش مفتاح الإنقاذ؟</button>
@@ -2976,7 +2980,7 @@ document.addEventListener("keydown",e=>{
 });
 $("#lockCancel").onclick=()=>{ exitAfterPin=false; hideLock(); };
 $("#lockForgot").addEventListener("click",()=>{ paintResetForm(); if(bioCan&&owner&&owner.bio){ $("#lockBio").hidden=false; $("#lockBio").textContent="👆 بدّل الكود بالبصمة / Face ID"; lockAfter=()=>{ setPin(null); showLock("new1",null,true); $("#lockErr").textContent="مزيان ✓ دابا ختار كود جديد."; }; } });
-$("#lockForgot").onclick=()=>{ $("#lockWho").hidden=true; $("#lockPad").hidden=true; $("#lockForgot").hidden=true; $("#lockSwitch").hidden=true; $("#lockBack").hidden=false; $("#lockReset").hidden=false; $("#lockT").textContent="باش تحيّد الكود"; $("#lockResetErr").textContent=""; $("#lockPhone").value=""; $("#lockPhone").focus(); };
+$("#lockForgot").onclick=()=>{ $("#lockWho").hidden=true; $("#lockPad").hidden=true; $("#lockForgot").hidden=true; $("#lockSwitch").hidden=true; $("#lockBack").hidden=false; $("#lockReset").hidden=false; $("#lockT").textContent="باش تحيّد الكود"; $("#lockResetErr").textContent=""; $("#lockPhone").value=""; if(!$("#lockPhoneBox").hidden) $("#lockPhone").focus(); };
 $("#lockBack").onclick=()=>showLock(lockMode,lockAfter);
 /* forgot the code: fingerprint / Face ID, or the shop's number + the recovery key (sent to the owner's WhatsApp),
    or, last resort, a rescue code from Hanout Alhouma valid for this shop and this day only */
@@ -2992,13 +2996,31 @@ function rescueOk(code){
 const RESET_WAITS=[15*60e3,60*60e3,24*3600e3];
 function resetState(){ try{ return JSON.parse(localStorage.getItem(bkKey("resetguard"))||"{}")||{}; }catch{ return {}; } }
 function saveResetState(o){ try{ localStorage.setItem(bkKey("resetguard"),JSON.stringify(o)); }catch{} }
+/* pulls the 8-digit key (or a 6-digit rescue code) out of whatever was pasted, even the whole WhatsApp message */
+function pickCode(t){
+  const d=toLatinDigits(String(t||""));
+  const k=d.match(/(\d{4})\s*[-–]?\s*(\d{4})/); if(k) return k[1]+"-"+k[2];
+  const r=d.match(/(?:^|\D)(\d{6})(?!\d)/); if(r) return r[1];
+  return d.replace(/[^\d-]/g,"");
+}
 function paintResetForm(){
   const hasKey=!!(owner&&owner.rkey);
-  $("#lockWordBox").hidden=!hasKey; $("#lockRescueBox").hidden=true; $("#lockNoWord").hidden=!hasKey; $("#lockAskUs").hidden=true;
-  $("#lockWord").value=""; $("#lockRescue").value=""; $("#lockResetErr").textContent="";
+  $("#lockPhoneBox").hidden=hasKey;               // with a key the number adds nothing: the key is the proof
+  $("#lockWordBox").hidden=!hasKey; $("#lockNoWord").hidden=!hasKey; $("#lockAskUs").hidden=true;
+  $("#lockPaste").hidden=!(navigator.clipboard&&navigator.clipboard.readText);
+  $("#lockWord").value=""; $("#lockResetErr").textContent="";
 }
+$("#lockWord").addEventListener("paste",e=>{ const t=(e.clipboardData||window.clipboardData)?.getData("text"); if(t){ e.preventDefault(); $("#lockWord").value=pickCode(t); } });
+$("#lockWord").addEventListener("blur",()=>{ const v=$("#lockWord").value; if(v) $("#lockWord").value=pickCode(v); });
+$("#lockPaste").addEventListener("click",async()=>{
+  try{ const t=await navigator.clipboard.readText(); const c=pickCode(t);
+    if(!c){ $("#lockResetErr").textContent="ما لقيت والو منسوخ. نسخ المفتاح من الواتساب و عاود."; return; }
+    $("#lockWord").value=c; $("#lockResetErr").textContent="";
+    $("#lockReset").requestSubmit ? $("#lockReset").requestSubmit() : $("#lockReset").dispatchEvent(new Event("submit",{cancelable:true}));
+  }catch{ $("#lockResetErr").textContent="ضغط مطوّل على الخانة و ختار «لصق»."; $("#lockWord").focus(); }
+});
 $("#lockNoWord").onclick=()=>{
-  $("#lockWordBox").hidden=true; $("#lockRescueBox").hidden=false; $("#lockNoWord").hidden=true;
+  $("#lockNoWord").hidden=true;
   const msg=`سلام، نسيت الكود و ما لقيتش مفتاح الإنقاذ ديال الحانوت.\nالحانوت: ${owner&&owner.shop||""}\nالواتساب: +${owner?waNumber(owner.phone):""}\nعافاك صيفط ليا كود الإنقاذ.`;
   $("#lockAskUs").href=`https://wa.me/${waNumber(PROVIDER_WA)}?text=${encodeURIComponent(msg)}`; $("#lockAskUs").hidden=false;
 };
@@ -3006,19 +3028,20 @@ $("#lockReset").addEventListener("submit",async e=>{
   e.preventDefault();
   const st=resetState();
   if(st.until && Date.now()<st.until){ const m=Math.ceil((st.until-Date.now())/60e3); $("#lockResetErr").textContent=`بزاف ديال المحاولات الغالطة. عاود من بعد ${m>=60?Math.ceil(m/60)+" ساعة":m+" دقيقة"}.`; return; }
+  const hasKey=!!(owner&&owner.rkey), w=pickCode($("#lockWord").value);
   const v=$("#lockPhone").value.trim();
-  const phoneOk = owner && validWa(v) && waNumber(v)===waNumber(owner.phone);
+  const phoneOk = hasKey || (owner && validWa(v) && waNumber(v)===waNumber(owner.phone));
   let ok=false;
   if(phoneOk){
-    if(!$("#lockRescueBox").hidden) ok=rescueOk($("#lockRescue").value);
-    else if(owner.rkey){ const w=$("#lockWord").value; ok = keyNorm(w).length===6 ? rescueOk(w) : (await keyHash(w))===owner.rkey; }   // a 6-digit rescue code typed in the key box works too
+    if(hasKey) ok = keyNorm(w).length===6 ? rescueOk(w) : (await keyHash(w))===owner.rkey;   // one box: the 8-digit key or a 6-digit rescue code
     else ok=true;                                   // shops from before the recovery key: the number, then a key is made right after
   }
   if(!ok){
     st.fails=(st.fails||0)+1;
     if(st.fails>=5){ st.level=Math.min((st.level||0),RESET_WAITS.length-1); st.until=Date.now()+RESET_WAITS[st.level]; st.level++; st.fails=0; }
     saveResetState(st);
-    $("#lockResetErr").textContent = !phoneOk ? "هاد الرقم ماشي ديال هاد الحانوت." : !$("#lockRescueBox").hidden ? "كود الإنقاذ ماشي صحيح ولا سالا الوقت ديالو." : "مفتاح الإنقاذ غالط.";
+    const left=5-(st.fails||0);
+    $("#lockResetErr").textContent = !phoneOk ? "هاد الرقم ماشي ديال هاد الحانوت." : (keyNorm(w).length===6 ? "كود الإنقاذ ماشي صحيح ولا سالا الوقت ديالو." : "المفتاح غالط. شوف مزيان الميساج ف الواتساب.") + (st.until?"":` (باقي ${left} محاولات)`);
     return;
   }
   saveResetState({});
@@ -3028,7 +3051,7 @@ $("#lockReset").addEventListener("submit",async e=>{
 var keyAfterPin=false, pendingKey="";
 function openKeySheet(){
   pendingKey=newRecoveryKey(); $("#ksKey").textContent=pendingKey; $("#ksDone").disabled=true;
-  const msg=`🔑 مفتاح الإنقاذ ديال ${owner&&owner.shop||"الحانوت"} (حانوت الحومة الذكي):\n${pendingKey}\n\nإلا نسيتي الكود السري: «نسيتي الكود؟» ← رقم الواتساب + هاد المفتاح.\nما تعطيه لحتى واحد.`;
+  const msg=`🔑 مفتاح الإنقاذ ديال ${owner&&owner.shop||"الحانوت"} (حانوت الحومة الذكي):\n${pendingKey}\n\nإلا نسيتي الكود السري: نسخ هاد الميساج ← «نسيتي الكود؟» ← «📋 لصق المفتاح».\nما تعطيه لحتى واحد.`;
   $("#ksSend").href=`https://wa.me/${owner?waNumber(owner.phone):""}?text=${encodeURIComponent(msg)}`;
   $("#keySheet").hidden=false;
 }
