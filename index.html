@@ -3032,12 +3032,17 @@ function openKeySheet(){
   $("#ksSend").href=`https://wa.me/${owner?waNumber(owner.phone):""}?text=${encodeURIComponent(msg)}`;
   $("#keySheet").hidden=false;
 }
-$("#ksSend").addEventListener("click",()=>{ setTimeout(()=>{ $("#ksDone").disabled=false; },800); });
-$("#ksDone").onclick=async()=>{
+/* save the key the moment it goes to WhatsApp: on iPhone the app can restart while WhatsApp is open */
+async function saveRecoveryKey(){
   if(!pendingKey) return;
-  owner.rkey=await keyHash(pendingKey); pendingKey="";
+  owner.rkey=await keyHash(pendingKey);
   try{ localStorage.setItem(OWNER_KEY,JSON.stringify(owner)); }catch{} if(typeof rememberShop==="function") rememberShop(owner);
-  $("#keySheet").hidden=true; paintPinCard(); toast("تسجّل مفتاح الإنقاذ ✓ خلّيه ف الواتساب ديالك.");
+  paintPinCard();
+}
+$("#ksSend").addEventListener("click",()=>{ saveRecoveryKey(); $("#ksDone").disabled=false; });
+$("#ksDone").onclick=async()=>{
+  await saveRecoveryKey(); pendingKey="";
+  $("#keySheet").hidden=true; toast("تسجّل مفتاح الإنقاذ ✓ خلّيه ف الواتساب ديالك.");
 };
 $("#ksLater").onclick=()=>{ pendingKey=""; try{ localStorage.setItem(bkKey("keylater"),String(Date.now()+864e5)); }catch{} $("#keySheet").hidden=true; };
 function maybeAskKey(){

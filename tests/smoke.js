@@ -233,6 +233,14 @@ async function fresh(){ await page.goto('file://'+FILE); await page.waitForTimeo
     ok(await page.$eval('#lock',e=>e.hidden),"code did not unlock");
   });
 
+  await t("recovery key is saved as soon as it is sent to WhatsApp",async()=>{
+    const r=await ev(async()=>{ const old=owner.rkey; owner.rkey=null; openKeySheet(); const k=document.getElementById('ksKey').textContent;
+      const a=document.getElementById('ksSend'); a.addEventListener('click',e=>e.preventDefault(),{once:true}); a.click();
+      await new Promise(r=>setTimeout(r,200)); const saved=owner.rkey===await keyHash(k);
+      document.getElementById('keySheet').hidden=true; return saved; });
+    ok(r,"key not saved when sent");
+  });
+
   await t("forgot code: number + recovery key, rescue code, wrong-try wait",async()=>{
     const key=await ev(async()=>{ openKeySheet(); const k=document.getElementById('ksKey').textContent; document.getElementById('ksDone').disabled=false; await document.getElementById('ksDone').onclick(); return k; });
     ok(/^\d{4}-\d{4}$/.test(key) && await ev(()=>!!owner.rkey && !JSON.stringify(owner).includes(document.getElementById('ksKey').textContent)),"key not made or stored in clear");
